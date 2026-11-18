@@ -26,6 +26,20 @@ You need a panel URL, username and password from your own subscription. Nothing
 is baked into the repository: credentials are entered at login and stored only
 on the device.
 
+## Get a build
+
+Each [release](../../releases) ships three downloads:
+
+| File | Use |
+|---|---|
+| `Rogue-<version>-win-x64-setup.exe` | **Windows installer** — per-user, no admin prompt, adds a Start-menu shortcut and sets up the self-updating layout |
+| `Rogue-<version>-win-x64.zip` | Portable Windows bundle (this is also what the in-app updater downloads) |
+| `Rogue-<version>.apk` | Android package (allow "install unknown apps" the first time) |
+
+The installer and the updater both use the same layout under
+`%LOCALAPPDATA%\Programs\Rogue`, so a fresh install can update itself. Running a
+newer `setup.exe` upgrades an existing install in place.
+
 ## Run it
 
 ```powershell

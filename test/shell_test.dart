@@ -6,6 +6,7 @@ import 'package:rogue/state/favourites.dart';
 import 'package:rogue/state/recents.dart';
 import 'package:rogue/state/watch_progress.dart';
 import 'package:rogue/theme.dart';
+import 'package:rogue/updates/app_version.dart';
 import 'package:rogue/ui/home_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -70,7 +71,7 @@ void main() {
 
     // Updates panel is part of Settings even when no channel is configured.
     expect(find.text('Updates'), findsOneWidget);
-    expect(find.text('Rogue 1.0.0'), findsOneWidget);
+    expect(find.text('Rogue ${AppVersion.running.semver}'), findsOneWidget);
     expect(find.text('Updates are disabled in this build.'), findsOneWidget);
 
     // Appearance swatches live at the top of Settings and apply immediately.
