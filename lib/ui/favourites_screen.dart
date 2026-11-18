@@ -45,18 +45,22 @@ class FavouritesScreen extends StatelessWidget {
           SectionHeader(
             title: 'Favourites',
             subtitle: empty
-                ? 'Right-click or long-press a channel, film or series to save it here'
+                ? isCompact(context)
+                      ? 'Long-press a channel, film or series to save it here'
+                      : 'Right-click a channel, film or series to save it here'
                 : '${model.favourites.length} saved',
           ),
           const SizedBox(height: 18),
           Expanded(
             child: empty
-                ? const StatusPane(
+                ? StatusPane(
                     icon: Icons.favorite_border_rounded,
                     title: 'No favourites yet',
-                    message:
-                        'Right-click (or long-press on touch) any channel, movie or series, '
-                        'then choose “Add to favourites”. They will appear here.',
+                    message: isCompact(context)
+                        ? 'Long-press any channel, movie or series, then choose '
+                              '“Add to favourites”. They will appear here.'
+                        : 'Right-click any channel, movie or series, then choose '
+                              '“Add to favourites”. They will appear here.',
                   )
                 : Scrollbar(
                     child: ListView(

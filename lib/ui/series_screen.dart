@@ -46,22 +46,24 @@ class _SeriesScreenState extends State<SeriesScreen> {
     return CatalogScaffold(
       title: 'Series',
       subtitle: ready
-          ? '${catalog.countFor(CatalogSegment.series, null)} shows Â· ${categories.length} categories'
+          ? '${catalog.countFor(CatalogSegment.series, null)} shows · ${categories.length} categories'
           : 'Box sets from your panel',
       actions: [
         refreshButton(
           busy: catalog.loading[CatalogSegment.series] ?? false,
           onPressed: () => catalog.load(CatalogSegment.series, force: true),
         ),
-        const SizedBox(width: 10),
-        SizedBox(
-          width: 260,
-          child: SearchField(
-            controller: _search,
-            hint: 'Search series…',
-            onChanged: (value) => setState(() => _query = value.trim()),
+        if (!compact) ...[
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 260,
+            child: SearchField(
+              controller: _search,
+              hint: 'Search series…',
+              onChanged: (value) => setState(() => _query = value.trim()),
+            ),
           ),
-        ),
+        ],
       ],
       child: !ready
           ? segmentStatus(

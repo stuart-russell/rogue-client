@@ -69,17 +69,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
                     ),
                     const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        for (final palette in kPalettes)
-                          _PaletteCard(
-                            palette: palette,
-                            selected: prefs.paletteId == palette.id,
-                            onTap: () => _setPalette(model, palette),
-                          ),
-                      ],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Two-up on phones; a single row of fixed cards elsewhere.
+                        final width = isCompact(context)
+                            ? (constraints.maxWidth - 10) / 2
+                            : 172.0;
+                        return Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            for (final palette in kPalettes)
+                              _PaletteCard(
+                                palette: palette,
+                                width: width,
+                                selected: prefs.paletteId == palette.id,
+                                onTap: () => _setPalette(model, palette),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ]),
                   const SizedBox(height: 14),
@@ -610,11 +619,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _PaletteCard extends StatefulWidget {
   const _PaletteCard({
     required this.palette,
+    required this.width,
     required this.selected,
     required this.onTap,
   });
 
   final Palette palette;
+  final double width;
   final bool selected;
   final VoidCallback onTap;
 
@@ -638,7 +649,7 @@ class _PaletteCardState extends State<_PaletteCard> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
-          width: isCompact(context) ? 150 : 172,
+          width: widget.width,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: palette.surface,

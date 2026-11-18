@@ -45,7 +45,9 @@ class RecentsScreen extends StatelessWidget {
             title: 'Recents',
             subtitle: empty
                 ? 'The last ${RecentsStore.perTypeLimit} channels, films and series you played'
-                : 'Last ${RecentsStore.perTypeLimit} per type · right-click or long-press to remove',
+                : isCompact(context)
+                ? 'Last ${RecentsStore.perTypeLimit} per type · long-press to remove'
+                : 'Last ${RecentsStore.perTypeLimit} per type · right-click to remove',
             trailing: empty
                 ? null
                 : TextButton.icon(
