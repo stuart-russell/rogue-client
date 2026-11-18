@@ -210,6 +210,7 @@ void main() {
         service: _FakeService(manifest: _manifest('1.2.0'), hash: 'abc123'),
         installer: installer,
         currentVersion: AppVersion.parse('1.1.0'),
+        target: UpdateTarget.windows,
       );
 
       await controller.check();
@@ -225,6 +226,7 @@ void main() {
         service: _FakeService(manifest: _manifest('1.2.0'), hash: 'incorrect'),
         installer: installer,
         currentVersion: AppVersion.parse('1.1.0'),
+        target: UpdateTarget.windows,
       );
 
       await controller.check();

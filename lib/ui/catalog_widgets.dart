@@ -6,6 +6,7 @@ import '../state/catalog_controller.dart';
 import '../core/app_log.dart';
 import '../theme.dart';
 import 'player_screen.dart';
+import 'responsive.dart';
 import 'widgets.dart';
 
 /// Shared page chrome for the catalogue tabs.
@@ -26,7 +27,12 @@ class CatalogScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(26, 22, 26, 0),
+      padding: EdgeInsets.fromLTRB(
+        pagePadding(context),
+        pageTopPadding(context),
+        pagePadding(context),
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -292,4 +298,105 @@ Widget segmentStatus({
     actionLabel: 'Reload',
     onAction: onRetry,
   );
+}
+
+class CategoryChips extends StatelessWidget {
+  const CategoryChips({
+    super.key,
+    required this.categories,
+    required this.total,
+    required this.selected,
+    required this.countFor,
+    required this.onSelected,
+  });
+
+  final List<Category> categories;
+  final int total;
+  final int? selected;
+  final int Function(int) countFor;
+  final ValueChanged<int?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 34,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(width: 7),
+        itemBuilder: (context, index) {
+          final isAll = index == 0;
+          final category = isAll ? null : categories[index - 1];
+          final active =
+              (isAll && selected == null) ||
+              (!isAll && selected == category!.id);
+          final label = isAll ? 'All' : category!.name;
+          final count = isAll ? total : countFor(category!.id);
+          return _CategoryChip(
+            label: '$label  ·  $count',
+            active: active,
+            onTap: () => onSelected(isAll ? null : category!.id),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatefulWidget {
+  const _CategoryChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  State<_CategoryChip> createState() => _CategoryChipState();
+}
+
+class _CategoryChipState extends State<_CategoryChip> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = widget.active;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.accent.withValues(alpha: 0.15)
+                : _hovered
+                ? AppColors.surfaceHigh
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(
+              color: active
+                  ? AppColors.accent.withValues(alpha: 0.6)
+                  : AppColors.border,
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              color: active ? AppColors.text : AppColors.textMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -6,6 +6,7 @@ import '../state/recents.dart';
 import '../theme.dart';
 import 'catalog_widgets.dart';
 import 'detail_screens.dart';
+import 'responsive.dart';
 import 'widgets.dart';
 
 class RecentsScreen extends StatelessWidget {
@@ -31,7 +32,12 @@ class RecentsScreen extends StatelessWidget {
     final empty = channels.isEmpty && movies.isEmpty && series.isEmpty;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(26, 22, 26, 0),
+      padding: EdgeInsets.fromLTRB(
+        pagePadding(context),
+        pageTopPadding(context),
+        pagePadding(context),
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../data/models.dart';
 import '../core/search_text.dart';
 import '../state/app_model.dart';
 import '../state/catalog_controller.dart';
-import '../theme.dart';
 import 'catalog_widgets.dart';
 import 'detail_screens.dart';
 import 'favourites_actions.dart';
+import 'responsive.dart';
 import 'widgets.dart';
 
 class MoviesScreen extends StatefulWidget {
@@ -42,6 +41,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
 
     final categories = catalog.categoriesFor(CatalogSegment.vod);
     final ready = catalog.countFor(CatalogSegment.vod, null) > 0;
+    final compact = isCompact(context);
 
     return CatalogScaffold(
       title: 'Movies',
@@ -54,14 +54,15 @@ class _MoviesScreenState extends State<MoviesScreen> {
           onPressed: () => catalog.load(CatalogSegment.vod, force: true),
         ),
         const SizedBox(width: 10),
-        SizedBox(
-          width: 260,
-          child: SearchField(
-            controller: _search,
-            hint: 'Search movies…',
-            onChanged: (value) => setState(() => _query = value.trim()),
+        if (!compact)
+          SizedBox(
+            width: 260,
+            child: SearchField(
+              controller: _search,
+              hint: 'Search movies…',
+              onChanged: (value) => setState(() => _query = value.trim()),
+            ),
           ),
-        ),
       ],
       child: !ready
           ? segmentStatus(
@@ -72,6 +73,14 @@ class _MoviesScreenState extends State<MoviesScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (compact) ...[
+                  SearchField(
+                    controller: _search,
+                    hint: 'Search movies…',
+                    onChanged: (value) => setState(() => _query = value.trim()),
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 CategoryChips(
                   categories: categories,
                   total: catalog.countFor(CatalogSegment.vod, null),
@@ -96,10 +105,10 @@ class _MoviesScreenState extends State<MoviesScreen> {
                               bottom: 24,
                             ),
                             gridDelegate:
-                                const SliverGridDelegateWithMaxCrossAxisExtent(
-                                  maxCrossAxisExtent: 178,
-                                  mainAxisSpacing: 18,
-                                  crossAxisSpacing: 14,
+                                SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: compact ? 124 : 178,
+                                  mainAxisSpacing: compact ? 14 : 18,
+                                  crossAxisSpacing: compact ? 10 : 14,
                                   childAspectRatio: 0.60,
                                 ),
                             itemCount: movies.length,
@@ -141,107 +150,6 @@ class _MoviesScreenState extends State<MoviesScreen> {
                 ),
               ],
             ),
-    );
-  }
-}
-
-class CategoryChips extends StatelessWidget {
-  const CategoryChips({
-    super.key,
-    required this.categories,
-    required this.total,
-    required this.selected,
-    required this.countFor,
-    required this.onSelected,
-  });
-
-  final List<Category> categories;
-  final int total;
-  final int? selected;
-  final int Function(int) countFor;
-  final ValueChanged<int?> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 34,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length + 1,
-        separatorBuilder: (_, _) => const SizedBox(width: 7),
-        itemBuilder: (context, index) {
-          final isAll = index == 0;
-          final category = isAll ? null : categories[index - 1];
-          final active =
-              (isAll && selected == null) ||
-              (!isAll && selected == category!.id);
-          final label = isAll ? 'All' : category!.name;
-          final count = isAll ? total : countFor(category!.id);
-          return _CategoryChip(
-            label: '$label  ·  $count',
-            active: active,
-            onTap: () => onSelected(isAll ? null : category!.id),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatefulWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  State<_CategoryChip> createState() => _CategoryChipState();
-}
-
-class _CategoryChipState extends State<_CategoryChip> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final active = widget.active;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: active
-                ? AppColors.accent.withValues(alpha: 0.15)
-                : _hovered
-                ? AppColors.surfaceHigh
-                : AppColors.surface,
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(
-              color: active
-                  ? AppColors.accent.withValues(alpha: 0.6)
-                  : AppColors.border,
-            ),
-          ),
-          child: Text(
-            widget.label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-              color: active ? AppColors.text : AppColors.textMuted,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -39,8 +39,10 @@ class UpdateController extends ChangeNotifier {
     UpdateService? service,
     UpdateInstaller? installer,
     AppVersion? currentVersion,
+    UpdateTarget? target,
   })  : _service = service ?? UpdateService(),
         _installer = installer ?? installerForCurrentPlatform(),
+        _target = target ?? currentUpdateTarget,
         currentVersion = currentVersion ?? AppVersion.running;
 
   static const Duration _staleAfter = Duration(hours: 6);
@@ -49,6 +51,7 @@ class UpdateController extends ChangeNotifier {
 
   final UpdateService _service;
   final UpdateInstaller _installer;
+  final UpdateTarget? _target;
   final AppVersion currentVersion;
 
   UpdateManifest? _manifest;
@@ -145,7 +148,7 @@ class UpdateController extends ChangeNotifier {
     final manifest = _manifest;
     if (manifest == null || busy) return;
 
-    final target = currentUpdateTarget;
+    final target = _target;
     final artifact = target == null ? null : manifest.artifactFor(target);
     if (target == null || artifact == null) {
       _error = 'No build is published for this platform yet.';

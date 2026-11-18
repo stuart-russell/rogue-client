@@ -80,6 +80,10 @@ class _PlayerScreenState extends State<PlayerScreen>
   @override
   void initState() {
     super.initState();
+    // Phones open the player edge-to-edge: system bars would eat the picture.
+    if (Platform.isAndroid) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
     WidgetsBinding.instance.addObserver(this);
     _bindStreams();
     _open();
@@ -331,6 +335,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   @override
   void dispose() {
     _disposed = true;
+    if (Platform.isAndroid) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
     _hideTimer?.cancel();
     _scrubTimer?.cancel();
     _feedbackTimer?.cancel();
@@ -753,6 +760,8 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   Widget _bottomBar() {
+    // Phones use hardware volume and have no room for the slider row.
+    final compact = MediaQuery.sizeOf(context).width < 700;
     return Positioned(
       left: 0,
       right: 0,
@@ -763,7 +772,12 @@ class _PlayerScreenState extends State<PlayerScreen>
           opacity: _controlsVisible ? 1 : 0,
           duration: const Duration(milliseconds: 180),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 44, 20, 16),
+            padding: EdgeInsets.fromLTRB(
+              compact ? 12 : 20,
+              44,
+              compact ? 12 : 20,
+              16,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
@@ -830,39 +844,41 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ),
                     const Spacer(),
                     _subtitleButton(),
-                    const SizedBox(width: 6),
-                    Icon(
-                      _volume == 0
-                          ? Icons.volume_off_rounded
-                          : Icons.volume_up_rounded,
-                      size: 19,
-                      color: Colors.white70,
-                    ),
-                    SizedBox(
-                      width: 120,
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6,
+                    if (!compact) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        _volume == 0
+                            ? Icons.volume_off_rounded
+                            : Icons.volume_up_rounded,
+                        size: 19,
+                        color: Colors.white70,
+                      ),
+                      SizedBox(
+                        width: 120,
+                        child: SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 3,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 6,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 12,
+                            ),
+                            activeTrackColor: Colors.white,
+                            inactiveTrackColor: Colors.white24,
+                            thumbColor: Colors.white,
                           ),
-                          overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 12,
+                          child: Slider(
+                            value: _volume,
+                            max: 100,
+                            onChanged: (value) {
+                              setState(() => _volume = value);
+                              _player.setVolume(value);
+                            },
                           ),
-                          activeTrackColor: Colors.white,
-                          inactiveTrackColor: Colors.white24,
-                          thumbColor: Colors.white,
-                        ),
-                        child: Slider(
-                          value: _volume,
-                          max: 100,
-                          onChanged: (value) {
-                            setState(() => _volume = value);
-                            _player.setVolume(value);
-                          },
                         ),
                       ),
-                    ),
+                    ],
                     const SizedBox(width: 8),
                     _iconButton(
                       icon: Icon(

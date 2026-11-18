@@ -155,28 +155,87 @@ class _HomeShellState extends State<HomeShell> {
     return Scaffold(
       body: SafeArea(bottom: false, child: content),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _index.clamp(0, 6),
-        height: 60,
+        selectedIndex: _index <= 3 ? _index : 4,
+        height: 62,
         backgroundColor: AppColors.backgroundElevated,
         indicatorColor: AppColors.accent.withValues(alpha: 0.18),
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        onDestinationSelected: _select,
-        destinations: [
-          for (final d in _destinations.take(6))
-            NavigationDestination(
-              icon: Icon(d.icon, size: 21),
-              selectedIcon: Icon(d.selectedIcon, size: 21),
-              label: d.label,
-            ),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        onDestinationSelected: (index) {
+          if (index == 4) {
+            _showMore(context);
+          } else {
+            _select(index);
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.live_tv_outlined, size: 22),
+            selectedIcon: Icon(Icons.live_tv_rounded, size: 22),
+            label: 'Guide',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.movie_outlined, size: 22),
+            selectedIcon: Icon(Icons.movie_rounded, size: 22),
+            label: 'Movies',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.video_library_outlined, size: 22),
+            selectedIcon: Icon(Icons.video_library_rounded, size: 22),
+            label: 'Series',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.search_rounded, size: 22),
+            selectedIcon: Icon(Icons.search_rounded, size: 22),
+            label: 'Search',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.more_horiz_rounded, size: 22),
+            selectedIcon: Icon(Icons.more_horiz_rounded, size: 22),
+            label: 'More',
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.small(
-        backgroundColor: AppColors.surfaceHigh,
-        foregroundColor: AppColors.text,
-        onPressed: () => _select(6),
-        child: const Icon(Icons.settings_outlined, size: 18),
+    );
+  }
+
+  /// Recents, favourites and settings live behind "More" on phones: six tabs
+  /// plus a settings FAB was too cramped to hit.
+  Future<void> _showMore(BuildContext context) async {
+    final choice = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: AppColors.backgroundElevated,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final entry in const [
+              (4, 'Recents', Icons.history_rounded),
+              (5, 'Favourites', Icons.favorite_rounded),
+              (6, 'Settings', Icons.settings_rounded),
+            ])
+              ListTile(
+                leading: Icon(
+                  entry.$3,
+                  color: _index == entry.$1 ? AppColors.accent : AppColors.textMuted,
+                ),
+                title: Text(
+                  entry.$2,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: _index == entry.$1 ? FontWeight.w700 : FontWeight.w500,
+                    color: _index == entry.$1 ? AppColors.accent : AppColors.text,
+                  ),
+                ),
+                onTap: () => Navigator.pop(context, entry.$1),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
+    if (choice != null && mounted) _select(choice);
   }
 }
 

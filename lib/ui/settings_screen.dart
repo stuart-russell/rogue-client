@@ -5,6 +5,7 @@ import '../state/catalog_controller.dart';
 import '../theme.dart';
 import 'pin_dialog.dart';
 import 'updates_panel.dart';
+import 'responsive.dart';
 import 'widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -36,7 +37,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = model.preferences;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(26, 22, 26, 0),
+      padding: EdgeInsets.fromLTRB(
+        pagePadding(context),
+        pageTopPadding(context),
+        pagePadding(context),
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -545,7 +551,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 150,
+            width: isCompact(context) ? 112 : 150,
             child: Text(
               key,
               style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
@@ -632,7 +638,7 @@ class _PaletteCardState extends State<_PaletteCard> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
-          width: 172,
+          width: isCompact(context) ? 150 : 172,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: palette.surface,

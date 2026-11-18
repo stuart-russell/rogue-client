@@ -11,6 +11,8 @@ import '../state/catalog_controller.dart';
 import '../state/preview_player.dart';
 import '../theme.dart';
 import 'catalog_widgets.dart';
+import 'compact_channel_tile.dart';
+import 'responsive.dart';
 import 'favourites_actions.dart';
 import '../state/recents.dart';
 import 'recents_actions.dart';
@@ -286,7 +288,11 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
     final categories = catalog.categoriesFor(CatalogSegment.live);
     final now = DateTime.now();
 
-    if (selected != null) {
+    // Phones get a now/next list instead of the 12-hour grid, and no silent
+    // data use from the preview player.
+    final compact = isCompact(context);
+
+    if (!compact && selected != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         if (_selectedId != selected.streamId) {
@@ -307,6 +313,10 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
         // or this post-frame would loop every build.
         if (!hadVideo && mounted) setState(() {});
       });
+    }
+
+    if (compact) {
+      return _buildCompact(model, channels, categories);
     }
 
     return CatalogScaffold(
@@ -442,6 +452,114 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildCompact(
+    AppModel model,
+    List<LiveStream> channels,
+    List<Category> categories,
+  ) {
+    final catalog = model.catalog;
+    final guide = model.epg;
+    final busy = catalog.loading[CatalogSegment.live] ?? false;
+    final pad = pagePadding(context);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(pad, pageTopPadding(context), pad, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: SectionHeader(
+                  title: 'TV Guide',
+                  subtitle: '${channels.length} channels',
+                ),
+              ),
+              refreshButton(
+                busy: busy,
+                onPressed: () => catalog.load(CatalogSegment.live, force: true),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SearchField(
+            controller: _search,
+            hint: 'Find a channel…',
+            onChanged: (value) => setState(() => _query = value.trim()),
+          ),
+          const SizedBox(height: 10),
+          if (categories.isNotEmpty) ...[
+            CategoryChips(
+              categories: categories,
+              total: catalog.countFor(CatalogSegment.live, null),
+              selected: _categoryId,
+              countFor: (id) => catalog.countFor(CatalogSegment.live, id),
+              onSelected: (id) => setState(() {
+                _categoryId = id;
+                _selectedId = null;
+              }),
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (!guide.hasData)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_month_outlined, size: 16, color: AppColors.textMuted),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Guide data not loaded — channels only.',
+                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: guide.loading ? null : () => guide.load(force: true),
+                    style: TextButton.styleFrom(foregroundColor: AppColors.accent),
+                    child: const Text('Load'),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: channels.isEmpty
+                ? const StatusPane(
+                    icon: Icons.search_off_rounded,
+                    title: 'No channels match',
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 18),
+                    itemCount: channels.length,
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: AppColors.border.withValues(alpha: 0.55),
+                    ),
+                    itemBuilder: (context, index) {
+                      final channel = channels[index];
+                      return CompactChannelTile(
+                        channel: channel,
+                        programme: guide.now(channel.epgChannelId),
+                        next: guide.next(channel.epgChannelId),
+                        onTap: () => _openMedia(
+                          [for (final c in channels) liveToMedia(model, c)],
+                          index,
+                          recent: recentForChannel(model, channel),
+                        ),
+                        onLongPress: (position) => showFavouriteMenu(
+                          context,
+                          position,
+                          favouriteForChannel(model, channel),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -6,7 +6,7 @@ import '../state/catalog_controller.dart';
 import 'catalog_widgets.dart';
 import 'detail_screens.dart';
 import 'favourites_actions.dart';
-import 'movies_screen.dart' show CategoryChips;
+import 'responsive.dart';
 import 'widgets.dart';
 
 class SeriesScreen extends StatefulWidget {
@@ -41,11 +41,12 @@ class _SeriesScreenState extends State<SeriesScreen> {
 
     final categories = catalog.categoriesFor(CatalogSegment.series);
     final ready = catalog.countFor(CatalogSegment.series, null) > 0;
+    final compact = isCompact(context);
 
     return CatalogScaffold(
       title: 'Series',
       subtitle: ready
-          ? '${catalog.countFor(CatalogSegment.series, null)} shows · ${categories.length} categories'
+          ? '${catalog.countFor(CatalogSegment.series, null)} shows Â· ${categories.length} categories'
           : 'Box sets from your panel',
       actions: [
         refreshButton(
@@ -71,6 +72,14 @@ class _SeriesScreenState extends State<SeriesScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (compact) ...[
+                  SearchField(
+                    controller: _search,
+                    hint: 'Search series…',
+                    onChanged: (value) => setState(() => _query = value.trim()),
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 CategoryChips(
                   categories: categories,
                   total: catalog.countFor(CatalogSegment.series, null),
@@ -95,10 +104,10 @@ class _SeriesScreenState extends State<SeriesScreen> {
                               bottom: 24,
                             ),
                             gridDelegate:
-                                const SliverGridDelegateWithMaxCrossAxisExtent(
-                                  maxCrossAxisExtent: 178,
-                                  mainAxisSpacing: 18,
-                                  crossAxisSpacing: 14,
+                                SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: compact ? 124 : 178,
+                                  mainAxisSpacing: compact ? 14 : 18,
+                                  crossAxisSpacing: compact ? 10 : 14,
                                   childAspectRatio: 0.60,
                                 ),
                             itemCount: series.length,

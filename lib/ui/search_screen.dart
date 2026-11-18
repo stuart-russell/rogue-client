@@ -7,6 +7,7 @@ import '../theme.dart';
 import 'catalog_widgets.dart';
 import 'detail_screens.dart';
 import 'favourites_actions.dart';
+import 'responsive.dart';
 import 'widgets.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -38,7 +39,12 @@ class _SearchScreenState extends State<SearchScreen> {
     final empty = channels.isEmpty && movies.isEmpty && seriesItems.isEmpty;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(26, 22, 26, 0),
+      padding: EdgeInsets.fromLTRB(
+        pagePadding(context),
+        pageTopPadding(context),
+        pagePadding(context),
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

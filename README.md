@@ -92,6 +92,12 @@ touch it.
   current half-hour. Select to preview, select again for full screen. Programme
   blocks know about live, catch-up and future; a "now" line and per-programme
   progress bars stay in sync.
+- **Phones** — the same catalogue in a touch layout: a now/next channel list with
+  live progress instead of the timeline grid, a full-width search box, three-up
+  poster grids, tighter page padding and a five-tab bar (Guide / Movies / Series
+  / Search / More) with Recents, Favourites and Settings behind **More**. The
+  player opens immersive and drops the desktop volume slider. Desktop and TV keep
+  the sidebar and the 12-hour timeline.
 - **Movies / Series** — responsive poster grids, category chips, local search, and
   detail pages with full-bleed artwork, an artwork-tinted ambient glow and a
   strong scrim for readability. Series have a season selector and play a whole

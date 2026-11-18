@@ -8,6 +8,7 @@ import '../state/watch_progress.dart';
 import '../theme.dart';
 import 'ambient.dart';
 import 'catalog_widgets.dart';
+import 'responsive.dart';
 import 'recents_actions.dart';
 import 'favourites_actions.dart';
 import 'resume_dialog.dart';
@@ -151,12 +152,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 6, 30, 40),
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact(context) ? 16 : 30,
+                    6,
+                    isCompact(context) ? 16 : 30,
+                    isCompact(context) ? 24 : 40,
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: 190,
+                        width: isCompact(context) ? 140 : 190,
                         child: Column(
                           children: [
                             GestureDetector(
@@ -262,7 +268,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 30),
+                      SizedBox(width: isCompact(context) ? 16 : 30),
                       Expanded(child: _details(info, backdrop)),
                     ],
                   ),
@@ -593,12 +599,17 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 6, 30, 30),
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact(context) ? 16 : 30,
+                    6,
+                    isCompact(context) ? 16 : 30,
+                    isCompact(context) ? 20 : 30,
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: 170,
+                        width: isCompact(context) ? 130 : 170,
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
@@ -761,7 +772,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
               if (info != null && info.seasons.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(30, 0, 30, 14),
+                    padding: EdgeInsets.fromLTRB(
+                      isCompact(context) ? 16 : 30,
+                      0,
+                      isCompact(context) ? 16 : 30,
+                      14,
+                    ),
                     child: SizedBox(
                       height: 34,
                       child: ListView.separated(
@@ -809,7 +825,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                   ),
                 ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(30, 0, 30, 40),
+                padding: EdgeInsets.fromLTRB(
+                  isCompact(context) ? 16 : 30,
+                  0,
+                  isCompact(context) ? 16 : 30,
+                  32,
+                ),
                 sliver: SliverList.separated(
                   itemCount: episodes.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 6),
