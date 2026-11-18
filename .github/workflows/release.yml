@@ -1,0 +1,160 @@
+name: release
+
+# Tag a commit and push the tag to publish:
+#   git tag -a v1.2.0 -m "What's new in 1.2.0"
+#   git push origin v1.2.0
+#
+# The workflow builds Windows + Android, hashes both artifacts, writes
+# manifest.json and publishes a GitHub release. Installed apps poll
+#   https://github.com/<owner>/<repo>/releases/latest/download/manifest.json
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: 3.47.0
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --reporter compact
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build release
+        shell: pwsh
+        env:
+          ROGUE_UPDATE_MANIFEST: https://github.com/${{ github.repository }}/releases/latest/download/manifest.json
+        run: ./tool/build_windows.ps1
+      - name: Pack
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+          $name = "Rogue-$($version.Split('+')[0])-win-x64.zip"
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "dist/$name"
+          Get-FileHash "dist/$name" -Algorithm SHA256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*.zip
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      # Optional: add these two repository secrets to sign release APKs with a
+      # stable key. Android refuses an update signed by a different key, and
+      # each CI runner generates a fresh debug key, so APKs built without this
+      # can be installed but not upgraded.
+      - name: Configure signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+            printf '%s\n' "$KEY_PROPERTIES" > android/key.properties
+          fi
+      - run: flutter pub get
+      - name: Build APK
+        run: |
+          flutter build apk --release \
+            --dart-define=ROGUE_VERSION=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2) \
+            --dart-define=ROGUE_UPDATE_MANIFEST=https://github.com/${{ github.repository }}/releases/latest/download/manifest.json
+      - name: Collect
+        run: |
+          version=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d+ -f1)
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/Rogue-$version.apk"
+          sha256sum dist/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: dist/*.apk
+          if-no-files-found: error
+
+  publish:
+    needs: [checks, windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Resolve version, tag and notes
+        id: meta
+        run: |
+          version=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2)
+          name=${version%%+*}
+          build=${version#*+}
+          if [ "$build" = "$version" ]; then build=0; fi
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            tag="v$name"
+          fi
+          notes=$(git tag -l --format='%(contents)' "$tag" 2>/dev/null || true)
+          if [ -z "$notes" ]; then notes="Rogue $name"; fi
+          printf '%s\n' "$notes" > dist/notes.md
+          {
+            echo "name=$name"
+            echo "build=$build"
+            echo "tag=$tag"
+          } >> "$GITHUB_OUTPUT"
+      - name: Write manifest
+        run: |
+          node tool/make_manifest.mjs \
+            --version "${{ steps.meta.outputs.name }}" \
+            --build "${{ steps.meta.outputs.build }}" \
+            --tag "${{ steps.meta.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --windows "dist/Rogue-${{ steps.meta.outputs.name }}-win-x64.zip" \
+            --android "dist/Rogue-${{ steps.meta.outputs.name }}.apk" \
+            --notes dist/notes.md \
+            --out dist/manifest.json
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: Rogue ${{ steps.meta.outputs.name }}
+          body_path: dist/notes.md
+          files: |
+            dist/Rogue-*-win-x64.zip
+            dist/Rogue-*.apk
+            dist/manifest.json
+          fail_on_unmatched_files: true
