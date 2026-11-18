@@ -32,9 +32,9 @@ Each [release](../../releases) ships three downloads:
 
 | File | Use |
 |---|---|
-| `Rogue-<version>-win-x64-setup.exe` | **Windows installer** — per-user, no admin prompt, adds a Start-menu shortcut and sets up the self-updating layout |
-| `Rogue-<version>-win-x64.zip` | Portable Windows bundle (this is also what the in-app updater downloads) |
-| `Rogue-<version>.apk` | Android package (allow "install unknown apps" the first time) |
+| `rogue-client-setup.exe` | **Windows installer** — per-user, no admin prompt, adds a Start-menu shortcut and sets up the self-updating layout |
+| `rogue-client-windows.zip` | Portable Windows bundle (this is also what the in-app updater downloads) |
+| `rogue-client.apk` | Android package (allow "install unknown apps" the first time) |
 
 The installer and the updater both use the same layout under
 `%LOCALAPPDATA%\Programs\Rogue`, so a fresh install can update itself. Running a
@@ -46,7 +46,7 @@ newer `setup.exe` upgrades an existing install in place.
 flutter pub get
 flutter run -d windows                 # debug
 .\tool\build_windows.ps1               # release bundle under build\windows\x64\runner\Release
-.\tool\build_windows.ps1 -Zip          # ... plus dist\Rogue-<version>-win-x64.zip
+.\tool\build_windows.ps1 -Zip          # ... plus dist\rogue-client-windows.zip
 ```
 
 `tool\build_windows.ps1` reads the version from `pubspec.yaml`, injects it into
@@ -176,12 +176,12 @@ panel explains that updates are disabled.
   "notes": "What changed…",
   "page": "https://github.com/<owner>/<repo>/releases/tag/v1.2.0",
   "windows": {
-    "url": "https://github.com/<owner>/<repo>/releases/download/v1.2.0/Rogue-1.2.0-win-x64.zip",
+    "url": "https://github.com/<owner>/<repo>/releases/download/v1.2.0/rogue-client-windows.zip",
     "sha256": "…",
     "size": 34281196
   },
   "android": {
-    "url": "https://github.com/<owner>/<repo>/releases/download/v1.2.0/Rogue-1.2.0.apk",
+    "url": "https://github.com/<owner>/<repo>/releases/download/v1.2.0/rogue-client.apk",
     "sha256": "…",
     "size": 23114567
   }
@@ -245,7 +245,7 @@ produced locally:
 
 ```powershell
 node tool/make_manifest.mjs --version 1.2.0 --build 12 --tag v1.2.0 `
-  --repo owner/repo --windows dist/Rogue-1.2.0-win-x64.zip --android dist/Rogue-1.2.0.apk
+  --repo owner/repo --windows dist/rogue-client-windows.zip --android dist/rogue-client.apk
 ```
 
 ## Checks

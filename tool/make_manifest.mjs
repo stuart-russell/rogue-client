@@ -3,7 +3,7 @@
 //
 //   node tool/make_manifest.mjs \
 //     --version 1.2.0 --build 12 --tag v1.2.0 --repo owner/rogue-client \
-//     --windows dist/Rogue-1.2.0-win-x64.zip --android dist/Rogue-1.2.0.apk \
+//     --windows dist/rogue-client-windows.zip --android dist/rogue-client.apk \
 //     --notes dist/notes.md --out dist/manifest.json
 //
 // The app reads it from
@@ -38,8 +38,8 @@ function describe(file, assetName) {
   };
 }
 
-const windowsAsset = `Rogue-${version}-win-x64.zip`;
-const androidAsset = `Rogue-${version}.apk`;
+const windowsAsset = 'rogue-client-windows.zip';
+const androidAsset = 'rogue-client.apk';
 
 let notes = '';
 const notesFile = arg('notes');

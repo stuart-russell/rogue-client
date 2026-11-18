@@ -56,7 +56,7 @@ jobs:
         shell: pwsh
         run: |
           $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
-          $name = "Rogue-$($version.Split('+')[0])-win-x64.zip"
+          $name = "rogue-client-windows.zip"
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "dist/$name"
           Get-FileHash "dist/$name" -Algorithm SHA256
@@ -75,7 +75,7 @@ jobs:
                   "/DOutputDir=$PWD\dist" `
                   "tool\installer\rogue.iss"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Get-FileHash "dist/Rogue-$appVersion-win-x64-setup.exe" -Algorithm SHA256
+          Get-FileHash "dist/rogue-client-setup.exe" -Algorithm SHA256
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -131,7 +131,7 @@ jobs:
         run: |
           version=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d+ -f1)
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk "dist/Rogue-$version.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/rogue-client.apk"
           sha256sum dist/*.apk
       - uses: actions/upload-artifact@v4
         with:
@@ -177,8 +177,8 @@ jobs:
             --build "${{ steps.meta.outputs.build }}" \
             --tag "${{ steps.meta.outputs.tag }}" \
             --repo "${{ github.repository }}" \
-            --windows "dist/Rogue-${{ steps.meta.outputs.name }}-win-x64.zip" \
-            --android "dist/Rogue-${{ steps.meta.outputs.name }}.apk" \
+            --windows "dist/rogue-client-windows.zip" \
+            --android "dist/rogue-client.apk" \
             --notes dist/notes.md \
             --out dist/manifest.json
       - uses: softprops/action-gh-release@v2
@@ -187,8 +187,8 @@ jobs:
           name: Rogue ${{ steps.meta.outputs.name }}
           body_path: dist/notes.md
           files: |
-            dist/Rogue-*-win-x64.zip
-            dist/Rogue-*-win-x64-setup.exe
-            dist/Rogue-*.apk
+            dist/rogue-client-windows.zip
+            dist/rogue-client-setup.exe
+            dist/rogue-client.apk
             dist/manifest.json
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true

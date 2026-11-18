@@ -71,7 +71,7 @@ Write-Host "Built $exe (version $version)"
 if ($Zip) {
   $dist = Join-Path $projectRoot 'dist'
   New-Item -ItemType Directory -Force -Path $dist | Out-Null
-  $zipName = "Rogue-$($version.Split('+')[0])-win-x64.zip"
+  $zipName = 'rogue-client-windows.zip'
   $zipPath = Join-Path $dist $zipName
   if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
   Compress-Archive -Path (Join-Path $release '*') -DestinationPath $zipPath
