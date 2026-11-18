@@ -81,6 +81,10 @@ $env:ROGUE_DEFAULT_SERVER = "http://panel-a:8880"
 .\tool\build_windows.ps1
 ```
 
+For release builds, add the same two values as repository secrets
+(**Settings → Secrets and variables → Actions**): `ROGUE_PORTALS` and
+`ROGUE_DEFAULT_SERVER`. The workflow bakes them into both the Windows and
+Android artifacts, and they stay out of the repository and logs.
 The login screen then shows a **Portal** dropdown instead of a URL field, with a
 read-only URL underneath and a `Custom server…` entry that reveals the text
 field. Presets land in `portals.json` in the app support directory on first run:

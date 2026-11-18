@@ -47,6 +47,10 @@ jobs:
         shell: pwsh
         env:
           ROGUE_UPDATE_MANIFEST: https://github.com/${{ github.repository }}/releases/latest/download/manifest.json
+          # Optional: bake portal presets into release builds. Values are masked
+          # in logs; leave the secrets unset for a public build with no presets.
+          ROGUE_PORTALS: ${{ secrets.ROGUE_PORTALS }}
+          ROGUE_DEFAULT_SERVER: ${{ secrets.ROGUE_DEFAULT_SERVER }}
         run: ./tool/build_windows.ps1
       - name: Pack
         shell: pwsh
@@ -108,10 +112,21 @@ jobs:
           fi
       - run: flutter pub get
       - name: Build APK
+        env:
+          ROGUE_PORTALS: ${{ secrets.ROGUE_PORTALS }}
+          ROGUE_DEFAULT_SERVER: ${{ secrets.ROGUE_DEFAULT_SERVER }}
         run: |
+          defines=()
+          if [ -n "$ROGUE_PORTALS" ]; then
+            defines+=("--dart-define=ROGUE_PORTALS=$ROGUE_PORTALS")
+          fi
+          if [ -n "$ROGUE_DEFAULT_SERVER" ]; then
+            defines+=("--dart-define=ROGUE_DEFAULT_SERVER=$ROGUE_DEFAULT_SERVER")
+          fi
           flutter build apk --release \
             --dart-define=ROGUE_VERSION=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2) \
-            --dart-define=ROGUE_UPDATE_MANIFEST=https://github.com/${{ github.repository }}/releases/latest/download/manifest.json
+            --dart-define=ROGUE_UPDATE_MANIFEST=https://github.com/${{ github.repository }}/releases/latest/download/manifest.json \
+            "${defines[@]}"
       - name: Collect
         run: |
           version=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d+ -f1)

@@ -60,7 +60,7 @@ if ($env:ROGUE_UPDATE_MANIFEST) {
   $arguments += "--dart-define=ROGUE_UPDATE_MANIFEST=$($env:ROGUE_UPDATE_MANIFEST)"
 }
 
-Write-Host "flutter $($arguments -join ' ')"
+if (-not $env:CI) { Write-Host "flutter $($arguments -join ' ')" }
 & $flutter @arguments
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

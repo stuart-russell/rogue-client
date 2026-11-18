@@ -102,26 +102,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final model = AppScope.of(context);
-    final wide = MediaQuery.sizeOf(context).width >= 940;
-
-    final body = wide
-        ? Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Expanded(flex: 6, child: _BrandPanel()),
-              const SizedBox(width: 48),
-              SizedBox(width: 400, child: _form(model.session.error)),
-            ],
-          )
-        : Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const _BrandPanel(compact: true),
-              const SizedBox(height: 28),
-              _form(model.session.error),
-            ],
-          );
 
     return Scaffold(
       body: Stack(
@@ -131,12 +111,20 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 40,
+                  horizontal: 24,
+                  vertical: 32,
                 ),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1060),
-                  child: body,
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Center(child: AppMark(size: 24)),
+                      const SizedBox(height: 26),
+                      _form(model.session.error),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -269,11 +257,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 letterSpacing: -0.4,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Use the same panel details your current app uses.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12.5),
-            ),
             const SizedBox(height: 22),
             _serverPicker(AppScope.read(context).portals),
             const SizedBox(height: 14),
@@ -372,120 +355,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     : const Text('Connect'),
               ),
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Icon(
-                  Icons.shield_outlined,
-                  size: 14,
-                  color: AppColors.textMuted,
-                ),
-                SizedBox(width: 7),
-                Expanded(
-                  child: Text(
-                    'Credentials stay on this device and are sent only to your panel.',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _BrandPanel extends StatelessWidget {
-  const _BrandPanel({this.compact = false});
-
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final features = const [
-      (Icons.grid_view_rounded, 'Live, movies and series in one fast grid'),
-      (
-        Icons.keyboard_arrow_down_rounded,
-        'Smooth, virtualised scrolling and instant search',
-      ),
-      (
-        Icons.calendar_month_outlined,
-        'Full EPG with now / next on every channel',
-      ),
-      (
-        Icons.desktop_windows_outlined,
-        'One codebase for Android TV, phone and Windows',
-      ),
-    ];
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppMark(size: compact ? 24 : 30),
-        SizedBox(height: compact ? 18 : 30),
-        Text(
-          'Your subscription.\nA better screen.',
-          style: TextStyle(
-            fontSize: compact ? 30 : 44,
-            height: 1.08,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1.2,
-          ),
-        ),
-        const SizedBox(height: 14),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Text(
-            'A clean client for your Xtream panel. No ads, no wasted taps — just channels, '
-            'films and series that scroll properly.',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: compact ? 13 : 14.5,
-              height: 1.55,
-            ),
-          ),
-        ),
-        SizedBox(height: compact ? 18 : 30),
-        for (final (icon, label) in features) ...[
-          Row(
-            children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Icon(icon, size: 16, color: AppColors.accent),
-              ),
-              const SizedBox(width: 12),
-              Flexible(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.text,
-                    height: 1.3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (!compact) ...[
-          const SizedBox(height: 18),
-          Text(
-            'Rogue is an independent client. Access is provided by your own subscription.',
-            style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-          ),
-        ],
-      ],
     );
   }
 }
