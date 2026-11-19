@@ -231,17 +231,28 @@ debug key each time, so add `ANDROID_KEYSTORE_BASE64` and
 
 ### Publishing
 
-Bump `version:` in `pubspec.yaml`, then tag the commit:
+Releases are driven by the version in `pubspec.yaml`. Bump it and push to
+`main`:
 
 ```powershell
-git tag -a v1.2.0 -m "What's new in 1.2.0"
-git push origin v1.2.0
+# pubspec.yaml: version: 1.2.0+12
+git commit -am "Rogue 1.2.0"
+git push origin main
 ```
 
-`.github/workflows/release.yml` runs the analyzer and tests, builds the Windows
-bundle and the universal APK, hashes both, writes `manifest.json`, and publishes
-a GitHub release with the tag message as release notes. The manifest can also be
-produced locally:
+`.github/workflows/release.yml` reads the version and checks whether `v1.2.0`
+already exists as a tag:
+
+- **New version** — runs the analyzer and tests, builds the Windows bundle and
+  the universal APK, builds the installer, hashes everything, writes
+  `manifest.json`, creates the tag at that commit and publishes the GitHub
+  release.
+- **Existing version** — only the analyzer and tests run; nothing is rebuilt or
+  published, so ordinary pushes stay cheap.
+
+Release notes come from an annotated tag message when you push one explicitly
+(`git tag -a v1.2.0 -m "What's new"`), otherwise from the commit subjects since
+the previous release. The manifest can also be produced locally:
 
 ```powershell
 node tool/make_manifest.mjs --version 1.2.0 --build 12 --tag v1.2.0 `

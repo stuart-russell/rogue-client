@@ -1,14 +1,22 @@
 name: release
 
-# Tag a commit and push the tag to publish:
-#   git tag -a v1.2.0 -m "What's new in 1.2.0"
-#   git push origin v1.2.0
+# Releases are driven by the version in pubspec.yaml:
 #
-# The workflow builds Windows + Android, hashes both artifacts, writes
-# manifest.json and publishes a GitHub release. Installed apps poll
+#   1. Bump `version: 0.2.0+3` and push/merge to main.
+#   2. If `v0.2.0` is not tagged yet, this workflow builds Windows + Android,
+#      hashes the artifacts, writes manifest.json, creates the tag and publishes
+#      the GitHub release.
+#   3. Pushes that do not change the version only run the checks.
+#
+# Tagging by hand still works and takes precedence for the release notes:
+#   git tag -a v0.3.0 -m "What's new" && git push origin v0.3.0
+#
+# Installed apps poll
 #   https://github.com/<owner>/<repo>/releases/latest/download/manifest.json
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -16,10 +24,59 @@ on:
 permissions:
   contents: write
 
+# Never let two releases race over the same tag/assets.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 env:
   FLUTTER_VERSION: 3.47.0
 
 jobs:
+  # Reads the version, decides whether it has already been released.
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.decide.outputs.release }}
+      name: ${{ steps.version.outputs.name }}
+      build: ${{ steps.version.outputs.build }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Read version
+        id: version
+        run: |
+          version=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2)
+          name=${version%%+*}
+          build=${version#*+}
+          if [ "$build" = "$version" ]; then build=0; fi
+          {
+            echo "name=$name"
+            echo "build=$build"
+            echo "tag=v$name"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version $name (build $build)"
+      - name: Release only when the tag is new
+        id: decide
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          # A tag push is an explicit release request.
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" = "$TAG" ]; then
+            echo "Tag $TAG pushed explicitly — releasing."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "$TAG already exists — nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$TAG is new — building a release."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +91,8 @@ jobs:
       - run: flutter test --reporter compact
 
   windows:
+    needs: prepare
+    if: needs.prepare.outputs.release == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,22 +114,20 @@ jobs:
       - name: Pack
         shell: pwsh
         run: |
-          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
-          $name = "rogue-client-windows.zip"
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "dist/$name"
-          Get-FileHash "dist/$name" -Algorithm SHA256
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "dist/rogue-client-windows.zip"
+          Get-FileHash "dist/rogue-client-windows.zip" -Algorithm SHA256
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --no-progress -y
       - name: Build installer
         shell: pwsh
+        env:
+          APP_VERSION: ${{ needs.prepare.outputs.name }}
         run: |
-          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
-          $appVersion = $version.Split('+')[0]
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { throw "ISCC.exe not found at $iscc" }
-          & $iscc "/DAppVersion=$appVersion" `
+          & $iscc "/DAppVersion=$env:APP_VERSION" `
                   "/DSourceDir=$PWD\build\windows\x64\runner\Release" `
                   "/DOutputDir=$PWD\dist" `
                   "tool\installer\rogue.iss"
@@ -85,6 +142,8 @@ jobs:
           if-no-files-found: error
 
   android:
+    needs: prepare
+    if: needs.prepare.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -129,7 +188,6 @@ jobs:
             "${defines[@]}"
       - name: Collect
         run: |
-          version=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d+ -f1)
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk "dist/rogue-client.apk"
           sha256sum dist/*.apk
@@ -140,7 +198,8 @@ jobs:
           if-no-files-found: error
 
   publish:
-    needs: [checks, windows, android]
+    needs: [prepare, checks, windows, android]
+    if: needs.prepare.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -150,32 +209,33 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - name: Resolve version, tag and notes
-        id: meta
+      - name: Write release notes
         run: |
-          version=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2)
-          name=${version%%+*}
-          build=${version#*+}
-          if [ "$build" = "$version" ]; then build=0; fi
-          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            tag="$GITHUB_REF_NAME"
-          else
-            tag="v$name"
-          fi
+          tag="${{ needs.prepare.outputs.tag }}"
+          name="${{ needs.prepare.outputs.name }}"
           notes=$(git tag -l --format='%(contents)' "$tag" 2>/dev/null || true)
-          if [ -z "$notes" ]; then notes="Rogue $name"; fi
+          if [ -z "$notes" ]; then
+            previous=$(git describe --tags --abbrev=0 --exclude="$tag" 2>/dev/null || true)
+            if [ -n "$previous" ]; then
+              changes=$(git log --no-merges --pretty='- %s' "$previous..HEAD")
+            else
+              changes=$(git log --no-merges --pretty='- %s' -n 20)
+            fi
+            if [ -n "$changes" ]; then
+              notes=$(printf 'Rogue %s\n\n%s' "$name" "$changes")
+            else
+              notes="Rogue $name"
+            fi
+          fi
           printf '%s\n' "$notes" > dist/notes.md
-          {
-            echo "name=$name"
-            echo "build=$build"
-            echo "tag=$tag"
-          } >> "$GITHUB_OUTPUT"
+          echo "--- notes ---"
+          cat dist/notes.md
       - name: Write manifest
         run: |
           node tool/make_manifest.mjs \
-            --version "${{ steps.meta.outputs.name }}" \
-            --build "${{ steps.meta.outputs.build }}" \
-            --tag "${{ steps.meta.outputs.tag }}" \
+            --version "${{ needs.prepare.outputs.name }}" \
+            --build "${{ needs.prepare.outputs.build }}" \
+            --tag "${{ needs.prepare.outputs.tag }}" \
             --repo "${{ github.repository }}" \
             --windows "dist/rogue-client-windows.zip" \
             --android "dist/rogue-client.apk" \
@@ -183,8 +243,9 @@ jobs:
             --out dist/manifest.json
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.meta.outputs.tag }}
-          name: Rogue ${{ steps.meta.outputs.name }}
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Rogue ${{ needs.prepare.outputs.name }}
           body_path: dist/notes.md
           files: |
             dist/rogue-client-windows.zip
