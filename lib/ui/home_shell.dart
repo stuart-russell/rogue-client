@@ -218,14 +218,20 @@ class _HomeShellState extends State<HomeShell> {
               ListTile(
                 leading: Icon(
                   entry.$3,
-                  color: _index == entry.$1 ? AppColors.accent : AppColors.textMuted,
+                  color: _index == entry.$1
+                      ? AppColors.accent
+                      : AppColors.textMuted,
                 ),
                 title: Text(
                   entry.$2,
                   style: TextStyle(
                     fontSize: 15,
-                    fontWeight: _index == entry.$1 ? FontWeight.w700 : FontWeight.w500,
-                    color: _index == entry.$1 ? AppColors.accent : AppColors.text,
+                    fontWeight: _index == entry.$1
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                    color: _index == entry.$1
+                        ? AppColors.accent
+                        : AppColors.text,
                   ),
                 ),
                 onTap: () => Navigator.pop(context, entry.$1),
@@ -364,49 +370,68 @@ class _SidebarTile extends StatefulWidget {
 
 class _SidebarTileState extends State<_SidebarTile> {
   bool _hovered = false;
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
     final selected = widget.selected;
     final hovered = _hovered;
+    final focused = _focused;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Material(
-          color: selected
-              ? AppColors.accent.withValues(alpha: 0.13)
-              : hovered
-              ? AppColors.surface.withValues(alpha: 0.8)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: widget.onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              child: Row(
-                children: [
-                  Icon(
-                    selected
-                        ? widget.destination.selectedIcon
-                        : widget.destination.icon,
-                    size: 19,
-                    color: selected ? AppColors.accent : AppColors.textMuted,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    widget.destination.label,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? AppColors.text : AppColors.textMuted,
+    return FocusableActionDetector(
+      onShowFocusHighlight: (value) => setState(() => _focused = value),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Material(
+            color: selected
+                ? AppColors.accent.withValues(alpha: 0.13)
+                : focused
+                ? AppColors.surfaceHigh
+                : hovered
+                ? AppColors.surface.withValues(alpha: 0.8)
+                : Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: focused ? AppColors.accent : Colors.transparent,
+                width: 1.4,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: widget.onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 11,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      selected
+                          ? widget.destination.selectedIcon
+                          : widget.destination.icon,
+                      size: 19,
+                      color: selected ? AppColors.accent : AppColors.textMuted,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Text(
+                      widget.destination.label,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: selected ? AppColors.text : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

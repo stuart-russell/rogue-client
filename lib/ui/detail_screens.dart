@@ -8,6 +8,7 @@ import '../state/watch_progress.dart';
 import '../theme.dart';
 import 'ambient.dart';
 import 'catalog_widgets.dart';
+import 'focusable_tap.dart';
 import 'responsive.dart';
 import 'recents_actions.dart';
 import 'favourites_actions.dart';
@@ -852,7 +853,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                           ]);
                           final complete =
                               episodes.isNotEmpty && watched == episodes.length;
-                          return GestureDetector(
+                          return FocusableTap(
                             onTap: () => setState(() => _season = season),
                             onLongPressStart: (details) => _showSeasonMenu(
                               details.globalPosition,
@@ -864,7 +865,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                               season,
                               info,
                             ),
-                            child: Container(
+                            builder: (context, focused) => Container(
                               alignment: Alignment.center,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -872,12 +873,15 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                               decoration: BoxDecoration(
                                 color: active
                                     ? _accent.withValues(alpha: 0.16)
+                                    : focused
+                                    ? AppColors.surfaceHigh
                                     : AppColors.surface,
                                 borderRadius: BorderRadius.circular(9),
                                 border: Border.all(
-                                  color: active
-                                      ? _accent.withValues(alpha: 0.65)
+                                  color: active || focused
+                                      ? _accent.withValues(alpha: 0.8)
                                       : AppColors.border,
+                                  width: focused ? 1.6 : 1,
                                 ),
                               ),
                               child: Row(
@@ -1002,26 +1006,32 @@ class _EpisodeTileState extends State<_EpisodeTile> {
         ? entry.fraction
         : null;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onLongPressStart: (details) =>
-            widget.onContextMenu(details.globalPosition),
-        onSecondaryTapUp: (details) =>
-            widget.onContextMenu(details.globalPosition),
+    return FocusableTap(
+      onTap: widget.onTap,
+      onLongPressStart: (details) =>
+          widget.onContextMenu(details.globalPosition),
+      onSecondaryTapUp: (details) =>
+          widget.onContextMenu(details.globalPosition),
+      builder: (context, focused) => MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: _hovered
+            color: focused
+                ? AppColors.surfaceHigh
+                : _hovered
                 ? AppColors.surface
                 : AppColors.surface.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(11),
             border: Border.all(
-              color: _hovered ? AppColors.border : Colors.transparent,
+              color: focused
+                  ? AppColors.accent
+                  : _hovered
+                  ? AppColors.border
+                  : Colors.transparent,
             ),
           ),
           child: Column(

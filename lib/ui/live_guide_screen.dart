@@ -11,6 +11,7 @@ import '../state/catalog_controller.dart';
 import '../state/preview_player.dart';
 import '../theme.dart';
 import 'catalog_widgets.dart';
+import 'focusable_tap.dart';
 import 'compact_channel_tile.dart';
 import 'responsive.dart';
 import 'favourites_actions.dart';
@@ -509,17 +510,28 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
               padding: const EdgeInsets.only(bottom: 6),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_month_outlined, size: 16, color: AppColors.textMuted),
+                  Icon(
+                    Icons.calendar_month_outlined,
+                    size: 16,
+                    color: AppColors.textMuted,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Guide data not loaded — channels only.',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ),
                   TextButton(
-                    onPressed: guide.loading ? null : () => guide.load(force: true),
-                    style: TextButton.styleFrom(foregroundColor: AppColors.accent),
+                    onPressed: guide.loading
+                        ? null
+                        : () => guide.load(force: true),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.accent,
+                    ),
                     child: const Text('Load'),
                   ),
                 ],
@@ -991,48 +1003,50 @@ class _ChannelRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return FocusableTap(
+      onTap: onTap,
       onLongPressStart: (details) => onContextMenu(details.globalPosition),
       onSecondaryTapUp: (details) => onContextMenu(details.globalPosition),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.accent.withValues(alpha: 0.12)
-                : Colors.transparent,
-            border: Border(
-              bottom: BorderSide(color: AppColors.border, width: 0.6),
-              left: BorderSide(
-                color: selected ? AppColors.accent : Colors.transparent,
-                width: 3,
-              ),
+      builder: (context, focused) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.accent.withValues(alpha: 0.12)
+              : focused
+              ? AppColors.surfaceHigh
+              : Colors.transparent,
+          border: Border(
+            bottom: BorderSide(color: AppColors.border, width: 0.6),
+            left: BorderSide(
+              color: selected || focused
+                  ? AppColors.accent
+                  : Colors.transparent,
+              width: 3,
             ),
           ),
-          child: Row(
-            children: [
-              ChannelAvatar(name: channel.name, image: channel.icon, size: 32),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  channel.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  ),
+        ),
+        child: Row(
+          children: [
+            ChannelAvatar(name: channel.name, image: channel.icon, size: 32),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                channel.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                 ),
               ),
-              if (selected)
-                Icon(
-                  Icons.play_circle_outline_rounded,
-                  size: 16,
-                  color: AppColors.accent,
-                ),
-            ],
-          ),
+            ),
+            if (selected)
+              Icon(
+                Icons.play_circle_outline_rounded,
+                size: 16,
+                color: AppColors.accent,
+              ),
+          ],
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/models.dart';
 import '../theme.dart';
+import 'focusable_tap.dart';
 import 'widgets.dart';
 
 /// A phone-sized channel row: logo, name, now/next and live progress.
@@ -34,12 +35,18 @@ class CompactChannelTile extends StatelessWidget {
                   airing.stop.difference(airing.start).inSeconds)
               .clamp(0.0, 1.0);
 
-    return GestureDetector(
+    return FocusableTap(
       onTap: onTap,
       onLongPressStart: (details) => onLongPress(details.globalPosition),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+      builder: (context, focused) => Container(
+        decoration: BoxDecoration(
+          color: focused ? AppColors.surfaceHigh : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: focused ? AppColors.accent : Colors.transparent,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Row(
           children: [
             ChannelAvatar(name: channel.name, image: channel.icon, size: 46),
@@ -64,7 +71,9 @@ class CompactChannelTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: airing == null ? AppColors.textMuted : AppColors.text,
+                      color: airing == null
+                          ? AppColors.textMuted
+                          : AppColors.text,
                     ),
                   ),
                   if (airing != null) ...[
@@ -98,7 +107,10 @@ class CompactChannelTile extends StatelessWidget {
                       'Next: ${next!.title}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ],
                 ],

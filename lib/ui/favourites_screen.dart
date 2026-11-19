@@ -8,6 +8,7 @@ import '../theme.dart';
 import 'catalog_widgets.dart';
 import 'detail_screens.dart';
 import 'favourites_actions.dart';
+import 'focusable_tap.dart';
 import 'responsive.dart';
 import 'widgets.dart';
 
@@ -255,24 +256,30 @@ class _FavouriteChannelRowState extends State<_FavouriteChannelRow> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onPlay,
-        onLongPressStart: (details) => widget.onMenu(details.globalPosition),
-        onSecondaryTapUp: (details) => widget.onMenu(details.globalPosition),
+    return FocusableTap(
+      onTap: widget.onPlay,
+      onLongPressStart: (details) => widget.onMenu(details.globalPosition),
+      onSecondaryTapUp: (details) => widget.onMenu(details.globalPosition),
+      builder: (context, focused) => MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
         child: Container(
           margin: const EdgeInsets.only(bottom: 4),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: _hovered
+            color: focused
+                ? AppColors.surfaceHigh
+                : _hovered
                 ? AppColors.surface
                 : AppColors.surface.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _hovered ? AppColors.border : Colors.transparent,
+              color: focused
+                  ? AppColors.accent
+                  : _hovered
+                  ? AppColors.border
+                  : Colors.transparent,
             ),
           ),
           child: Row(

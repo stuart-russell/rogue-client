@@ -5,6 +5,7 @@ import '../state/app_model.dart';
 import '../state/catalog_controller.dart';
 import '../core/app_log.dart';
 import '../theme.dart';
+import 'focusable_tap.dart';
 import 'player_screen.dart';
 import 'responsive.dart';
 import 'widgets.dart';
@@ -124,22 +125,25 @@ class _CategoryRowState extends State<_CategoryRow> {
   @override
   Widget build(BuildContext context) {
     final active = widget.active;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
+    return FocusableTap(
+      onTap: widget.onTap,
+      builder: (context, focused) => MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
         child: Container(
           margin: const EdgeInsets.only(bottom: 2),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           decoration: BoxDecoration(
             color: active
                 ? AppColors.accent.withValues(alpha: 0.13)
-                : _hovered
+                : focused || _hovered
                 ? AppColors.surfaceHigh.withValues(alpha: 0.7)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
+            border: Border.all(
+              color: focused ? AppColors.accent : Colors.transparent,
+            ),
           ),
           child: Row(
             children: [
@@ -364,12 +368,12 @@ class _CategoryChipState extends State<_CategoryChip> {
   @override
   Widget build(BuildContext context) {
     final active = widget.active;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
+    return FocusableTap(
+      onTap: widget.onTap,
+      builder: (context, focused) => MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           alignment: Alignment.center,
@@ -377,14 +381,15 @@ class _CategoryChipState extends State<_CategoryChip> {
           decoration: BoxDecoration(
             color: active
                 ? AppColors.accent.withValues(alpha: 0.15)
-                : _hovered
+                : focused || _hovered
                 ? AppColors.surfaceHigh
                 : AppColors.surface,
             borderRadius: BorderRadius.circular(9),
             border: Border.all(
-              color: active
-                  ? AppColors.accent.withValues(alpha: 0.6)
+              color: active || focused
+                  ? AppColors.accent.withValues(alpha: 0.8)
                   : AppColors.border,
+              width: focused ? 1.6 : 1,
             ),
           ),
           child: Text(

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../state/app_model.dart';
 import '../theme.dart';
+import 'focusable_tap.dart';
 
 final _timeFormat = DateFormat.Hm();
 final _dayFormat = DateFormat('EEE d MMM');
@@ -342,20 +343,20 @@ class _PosterCardState extends State<PosterCard> {
   @override
   Widget build(BuildContext context) {
     final resolved = resolvePanelImage(context, widget.image);
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onLongPressStart: widget.onContextMenu == null
-            ? null
-            : (details) => widget.onContextMenu!(details.globalPosition),
-        onSecondaryTapUp: widget.onContextMenu == null
-            ? null
-            : (details) => widget.onContextMenu!(details.globalPosition),
+    return FocusableTap(
+      onTap: widget.onTap,
+      onLongPressStart: widget.onContextMenu == null
+          ? null
+          : (details) => widget.onContextMenu!(details.globalPosition),
+      onSecondaryTapUp: widget.onContextMenu == null
+          ? null
+          : (details) => widget.onContextMenu!(details.globalPosition),
+      builder: (context, focused) => MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
         child: AnimatedScale(
-          scale: _hovered ? 1.025 : 1,
+          scale: _hovered || focused ? 1.025 : 1,
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
           child: Column(
@@ -367,11 +368,11 @@ class _PosterCardState extends State<PosterCard> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: _hovered
+                      color: _hovered || focused
                           ? AppColors.accent.withValues(alpha: 0.75)
                           : AppColors.border,
                     ),
-                    boxShadow: _hovered
+                    boxShadow: _hovered || focused
                         ? [
                             BoxShadow(
                               color: AppColors.accent.withValues(alpha: 0.22),

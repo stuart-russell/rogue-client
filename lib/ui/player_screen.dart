@@ -588,6 +588,22 @@ class _PlayerScreenState extends State<PlayerScreen>
       case LogicalKeyboardKey.keyC:
         _toggleSubtitles();
         return KeyEventResult.handled;
+      // Android TV remotes send Select/Enter for the centre button.
+      case LogicalKeyboardKey.select:
+      case LogicalKeyboardKey.enter:
+      case LogicalKeyboardKey.numpadEnter:
+      case LogicalKeyboardKey.gameButtonA:
+        _toggleControls();
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.mediaPlayPause:
+        _player.playOrPause();
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.mediaPlay:
+        _player.play();
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.mediaPause:
+        _player.pause();
+        return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
