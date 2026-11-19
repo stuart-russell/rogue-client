@@ -62,6 +62,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool get _hasNext => _index + 1 < widget.playlist.length;
   bool get _hasPrevious => _index > 0;
   bool get _isDesktop => !Platform.isAndroid && !Platform.isIOS;
+  bool get _isMobile => Platform.isAndroid || Platform.isIOS;
   bool get _subtitlesOn =>
       _activeSubtitleId != null && _activeSubtitleId != 'no';
 
@@ -80,9 +81,14 @@ class _PlayerScreenState extends State<PlayerScreen>
   @override
   void initState() {
     super.initState();
-    // Phones open the player edge-to-edge: system bars would eat the picture.
-    if (Platform.isAndroid) {
+    // Phones go full screen on open: bars hidden and rotated to landscape,
+    // regardless of the device's auto-rotate setting.
+    if (_isMobile) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
     }
     WidgetsBinding.instance.addObserver(this);
     _bindStreams();
@@ -335,8 +341,10 @@ class _PlayerScreenState extends State<PlayerScreen>
   @override
   void dispose() {
     _disposed = true;
-    if (Platform.isAndroid) {
+    if (_isMobile) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      // Hand orientation control back to the system.
+      SystemChrome.setPreferredOrientations(const []);
     }
     _hideTimer?.cancel();
     _scrubTimer?.cancel();
@@ -423,6 +431,33 @@ class _PlayerScreenState extends State<PlayerScreen>
       _player.playOrPause();
       _showControls();
     }
+  }
+
+  /// Phones: a tap on the picture only reveals or hides the controls; playback
+  /// is never toggled by tapping the video.
+  void _toggleControls() {
+    if (_controlsVisible) {
+      _hideTimer?.cancel();
+      setState(() => _controlsVisible = false);
+    } else {
+      _showControls();
+    }
+  }
+
+  /// Switches between landscape (the mobile default) and portrait, which also
+  /// works when the device has auto-rotate switched off.
+  Future<void> _toggleOrientation() async {
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+    await SystemChrome.setPreferredOrientations(
+      landscape
+          ? const [DeviceOrientation.portraitUp]
+          : const [
+              DeviceOrientation.landscapeLeft,
+              DeviceOrientation.landscapeRight,
+            ],
+    );
+    if (mounted) setState(() {});
   }
 
   Widget _seekFeedback() {
@@ -579,12 +614,14 @@ class _PlayerScreenState extends State<PlayerScreen>
                 LayoutBuilder(
                   builder: (context, constraints) => GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    // Netflix-style tap zones: left third rewinds, right third
-                    // forwards, the middle toggles playback.
-                    onTapUp: (details) => _handleVideoTap(
-                      details.localPosition,
-                      constraints.maxWidth,
-                    ),
+                    // Desktop keeps Netflix-style tap zones. On phones a tap
+                    // only toggles the controls; the buttons do the rest.
+                    onTapUp: (details) => _isMobile
+                        ? _toggleControls()
+                        : _handleVideoTap(
+                            details.localPosition,
+                            constraints.maxWidth,
+                          ),
                     child: Video(
                       controller: _controller,
                       controls: NoVideoControls,
@@ -760,8 +797,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   Widget _bottomBar() {
-    // Phones use hardware volume and have no room for the slider row.
-    final compact = MediaQuery.sizeOf(context).width < 700;
+    // Phones use hardware volume, and even in landscape the control row is
+    // full of buttons, so the slider stays desktop-only.
+    final compact = _isMobile || MediaQuery.sizeOf(context).width < 700;
     return Positioned(
       left: 0,
       right: 0,
@@ -880,15 +918,22 @@ class _PlayerScreenState extends State<PlayerScreen>
                       ),
                     ],
                     const SizedBox(width: 8),
-                    _iconButton(
-                      icon: Icon(
-                        _fullscreen
-                            ? Icons.fullscreen_exit_rounded
-                            : Icons.fullscreen_rounded,
+                    if (_isMobile)
+                      _iconButton(
+                        icon: const Icon(Icons.screen_rotation_rounded),
+                        onTap: _toggleOrientation,
+                        tooltip: 'Rotate',
+                      )
+                    else
+                      _iconButton(
+                        icon: Icon(
+                          _fullscreen
+                              ? Icons.fullscreen_exit_rounded
+                              : Icons.fullscreen_rounded,
+                        ),
+                        onTap: _toggleFullscreen,
+                        tooltip: 'Fullscreen (F)',
                       ),
-                      onTap: _toggleFullscreen,
-                      tooltip: 'Fullscreen (F)',
-                    ),
                   ],
                 ),
               ],
