@@ -163,7 +163,7 @@ class MetaChip extends StatelessWidget {
   }
 }
 
-class SearchField extends StatelessWidget {
+class SearchField extends StatefulWidget {
   const SearchField({
     super.key,
     required this.controller,
@@ -171,6 +171,7 @@ class SearchField extends StatelessWidget {
     this.hint = 'Search…',
     this.autofocus = false,
     this.onSubmitted,
+    this.traversal = true,
   });
 
   final TextEditingController controller;
@@ -179,16 +180,35 @@ class SearchField extends StatelessWidget {
   final bool autofocus;
   final ValueChanged<String>? onSubmitted;
 
+  /// False for header fields: a D-pad focus landing in a text field traps arrow
+  /// keys in the caret, so those are pointer-only and the Search tab is the
+  /// keyboard route.
+  final bool traversal;
+
+  @override
+  State<SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<SearchField> {
+  late final FocusNode _focus = FocusNode(skipTraversal: !widget.traversal);
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: controller,
-      autofocus: autofocus,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
+      controller: widget.controller,
+      focusNode: _focus,
+      autofocus: widget.autofocus,
+      onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
       style: const TextStyle(fontSize: 13.5),
       decoration: InputDecoration(
-        hintText: hint,
+        hintText: widget.hint,
         hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
         prefixIcon: Icon(
           Icons.search_rounded,

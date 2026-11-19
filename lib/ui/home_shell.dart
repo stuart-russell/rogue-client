@@ -114,29 +114,28 @@ class _HomeShellState extends State<HomeShell> {
         const SingleActivator(LogicalKeyboardKey.digit4, control: true): () =>
             _select(3),
       },
-      child: Focus(
-        autofocus: true,
-        child: Column(
-          children: [
-            if (model.catalog.busy || model.epg.loading)
-              LinearProgressIndicator(
-                minHeight: 2,
-                backgroundColor: Colors.transparent,
-                color: AppColors.accent,
-              )
-            else
-              const SizedBox(height: 2),
-            Expanded(
-              child: IndexedStack(
-                index: _index,
-                children: [
-                  for (var i = 0; i < pages.length; i++)
-                    _visited.contains(i) ? pages[i] : const SizedBox.shrink(),
-                ],
-              ),
+      // No Focus wrapper here: an invisible full-size focus node intercepted
+      // D-pad traversal, so content items could not be reached from the sidebar.
+      child: Column(
+        children: [
+          if (model.catalog.busy || model.epg.loading)
+            LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: Colors.transparent,
+              color: AppColors.accent,
+            )
+          else
+            const SizedBox(height: 2),
+          Expanded(
+            child: IndexedStack(
+              index: _index,
+              children: [
+                for (var i = 0; i < pages.length; i++)
+                  _visited.contains(i) ? pages[i] : const SizedBox.shrink(),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
 

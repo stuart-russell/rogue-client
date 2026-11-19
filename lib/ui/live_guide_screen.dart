@@ -363,6 +363,7 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
           child: SearchField(
             controller: _search,
             hint: 'Find a channel…',
+            traversal: false,
             onChanged: (value) => setState(() => _query = value.trim()),
           ),
         ),

@@ -60,6 +60,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
             child: SearchField(
               controller: _search,
               hint: 'Search series…',
+              traversal: false,
               onChanged: (value) => setState(() => _query = value.trim()),
             ),
           ),

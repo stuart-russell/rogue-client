@@ -60,6 +60,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
             child: SearchField(
               controller: _search,
               hint: 'Search movies…',
+              traversal: false,
               onChanged: (value) => setState(() => _query = value.trim()),
             ),
           ),
