@@ -12,7 +12,7 @@ class AppVersion implements Comparable<AppVersion> {
   /// Injected by the build scripts / CI from `pubspec.yaml`.
   static const String raw = String.fromEnvironment(
     'ROGUE_VERSION',
-    defaultValue: '0.2.1+4',
+    defaultValue: '0.2.2+5',
   );
 
   static AppVersion get running => AppVersion.parse(raw);

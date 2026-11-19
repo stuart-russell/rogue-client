@@ -224,10 +224,32 @@ settings screen automatically when it is missing.
 
 `versionCode` comes from the `+N` build number in `pubspec.yaml`, so bump it for
 every release. **Signing matters here:** Android only installs an update signed
-with the same key as the installed app. Without `android/key.properties` the
-build is debug-signed (fine for a first install); CI runners generate a fresh
-debug key each time, so add `ANDROID_KEYSTORE_BASE64` and
-`ANDROID_KEY_PROPERTIES` repository secrets to sign with a stable key.
+with the same key as the installed app. CI runners generate a fresh debug key
+each run, so releases must be signed with a stable keystore:
+
+```powershell
+keytool -genkeypair -v -keystore android\release.jks -alias rogue `
+  -keyalg RSA -keysize 2048 -validity 10000 -storetype PKCS12 `
+  -dname "CN=Rogue, OU=Client, O=Rogue, C=GB"
+```
+
+Create `android\key.properties` (both files are git-ignored):
+
+```properties
+storePassword=…
+keyPassword=…
+keyAlias=rogue
+storeFile=release.jks
+```
+
+Then add two repository secrets so CI signs with the same key:
+
+- `ANDROID_KEYSTORE_BASE64` — `[Convert]::ToBase64String([IO.File]::ReadAllBytes("android\release.jks"))`
+- `ANDROID_KEY_PROPERTIES` — the contents of `android\key.properties`
+
+Keep a secure backup of `release.jks`: losing it means no future APK can update
+an installed copy, and changing it forces a one-time uninstall.
+
 
 ### Publishing
 

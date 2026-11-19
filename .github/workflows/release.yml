@@ -166,7 +166,7 @@ jobs:
           KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+            echo "$KEYSTORE_BASE64" | base64 -d > android/release.jks
             printf '%s\n' "$KEY_PROPERTIES" > android/key.properties
           fi
       - run: flutter pub get
