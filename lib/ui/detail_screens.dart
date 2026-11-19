@@ -80,6 +80,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       info?.backdrop ?? info?.poster ?? widget.movie.icon,
     );
     final watch = model.progress.entryFor('vod:${widget.movie.streamId}');
+    final isFavourite = model.favourites.contains(
+      FavouriteType.vod,
+      widget.movie.streamId,
+    );
     final resumable =
         watch != null &&
         !watch.completed &&
@@ -107,6 +111,21 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     onTap: () => Navigator.of(context).maybePop(),
                   ),
                 ),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: _RoundButton(
+                      icon: isFavourite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color: isFavourite ? AppColors.accent : Colors.white,
+                      onTap: () => toggleFavourite(
+                        context,
+                        favouriteForMovie(model, widget.movie),
+                      ),
+                    ),
+                  ),
+                ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
@@ -314,10 +333,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final title = info?.name ?? widget.movie.name;
     final model = AppScope.of(context);
     final watch = model.progress.entryFor('vod:${widget.movie.streamId}');
-    final isFavourite = model.favourites.contains(
-      FavouriteType.vod,
-      widget.movie.streamId,
-    );
     final chips = <Widget>[
       if (info?.rating != null)
         MetaChip(
@@ -346,36 +361,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
-                  height: 1.1,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: () => toggleFavourite(
-                context,
-                favouriteForMovie(model, widget.movie),
-              ),
-              tooltip: isFavourite
-                  ? 'Remove from favourites'
-                  : 'Add to favourites',
-              icon: Icon(
-                isFavourite
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                color: isFavourite ? AppColors.accent : AppColors.textMuted,
-              ),
-            ),
-          ],
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.8,
+            height: 1.1,
+          ),
         ),
         const SizedBox(height: 14),
         Wrap(spacing: 8, runSpacing: 8, children: chips),
@@ -519,6 +512,82 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     }
   }
 
+  /// Right-click / long-press on a season chip: mark the whole season watched
+  /// or unwatched in one go.
+  Future<void> _showSeasonMenu(
+    Offset position,
+    int season,
+    SeriesInfo info,
+  ) async {
+    final episodes = info.seasons[season] ?? const <Episode>[];
+    if (episodes.isEmpty) return;
+
+    final model = AppScope.read(context);
+    final ids = [for (final episode in episodes) 'ep:${episode.id}'];
+    final allWatched = ids.every(
+      (id) => model.progress.entryFor(id)?.completed ?? false,
+    );
+
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    final size = overlay?.size ?? MediaQuery.sizeOf(context);
+    final choice = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        size.width - position.dx,
+        size.height - position.dy,
+      ),
+      color: AppColors.surfaceHigh,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      constraints: const BoxConstraints(minWidth: 230, maxWidth: 340),
+      items: [
+        PopupMenuItem<String>(
+          value: 'watch',
+          child: Row(
+            children: [
+              Icon(
+                allWatched
+                    ? Icons.visibility_off_rounded
+                    : Icons.done_all_rounded,
+                size: 18,
+                color: allWatched ? AppColors.warning : AppColors.success,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                allWatched
+                    ? 'Mark season as unwatched'
+                    : 'Mark season as watched',
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+    if (choice != 'watch' || !mounted) return;
+
+    if (allWatched) {
+      await model.progress.clearAll(ids);
+    } else {
+      model.progress.markWatchedAll(ids);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          width: 330,
+          content: Text(
+            allWatched
+                ? 'Season $season marked as unwatched'
+                : 'Season $season marked as watched',
+          ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final info = _info;
@@ -554,6 +623,31 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                     onTap: () => Navigator.of(context).maybePop(),
                   ),
                 ),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: _RoundButton(
+                      icon:
+                          model.favourites.contains(
+                            FavouriteType.series,
+                            widget.series.seriesId,
+                          )
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color:
+                          model.favourites.contains(
+                            FavouriteType.series,
+                            widget.series.seriesId,
+                          )
+                          ? AppColors.accent
+                          : Colors.white,
+                      onTap: () => toggleFavourite(
+                        context,
+                        favouriteForSeries(model, widget.series),
+                      ),
+                    ),
+                  ),
+                ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
@@ -654,48 +748,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                IconButton(
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () => toggleFavourite(
-                                    context,
-                                    favouriteForSeries(model, widget.series),
-                                  ),
-                                  tooltip:
-                                      model.favourites.contains(
-                                        FavouriteType.series,
-                                        widget.series.seriesId,
-                                      )
-                                      ? 'Remove from favourites'
-                                      : 'Add to favourites',
-                                  icon: Icon(
-                                    model.favourites.contains(
-                                          FavouriteType.series,
-                                          widget.series.seriesId,
-                                        )
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    size: 20,
-                                    color:
-                                        model.favourites.contains(
-                                          FavouriteType.series,
-                                          widget.series.seriesId,
-                                        )
-                                        ? AppColors.accent
-                                        : AppColors.textMuted,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Series',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              'Series',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.textMuted,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Wrap(
@@ -787,8 +845,25 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                         itemBuilder: (context, index) {
                           final season = info.seasons.keys.elementAt(index);
                           final active = season == _season;
+                          final episodes =
+                              info.seasons[season] ?? const <Episode>[];
+                          final watched = model.progress.completedCount([
+                            for (final episode in episodes) 'ep:${episode.id}',
+                          ]);
+                          final complete =
+                              episodes.isNotEmpty && watched == episodes.length;
                           return GestureDetector(
                             onTap: () => setState(() => _season = season),
+                            onLongPressStart: (details) => _showSeasonMenu(
+                              details.globalPosition,
+                              season,
+                              info,
+                            ),
+                            onSecondaryTapUp: (details) => _showSeasonMenu(
+                              details.globalPosition,
+                              season,
+                              info,
+                            ),
                             child: Container(
                               alignment: Alignment.center,
                               padding: const EdgeInsets.symmetric(
@@ -805,17 +880,30 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                                       : AppColors.border,
                                 ),
                               ),
-                              child: Text(
-                                'Season $season',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: active
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: active
-                                      ? AppColors.text
-                                      : AppColors.textMuted,
-                                ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Season $season',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: active
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: active
+                                          ? AppColors.text
+                                          : AppColors.textMuted,
+                                    ),
+                                  ),
+                                  if (watched > 0) ...[
+                                    const SizedBox(width: 7),
+                                    _SeasonProgressBadge(
+                                      watched: watched,
+                                      total: episodes.length,
+                                      complete: complete,
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
                           );
@@ -1037,11 +1125,51 @@ class _EpisodeTileState extends State<_EpisodeTile> {
   }
 }
 
+/// Small pill on a season chip showing how much of the season is finished.
+class _SeasonProgressBadge extends StatelessWidget {
+  const _SeasonProgressBadge({
+    required this.watched,
+    required this.total,
+    required this.complete,
+  });
+
+  final int watched;
+  final int total;
+  final bool complete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: complete
+          ? Icon(Icons.check_rounded, size: 11, color: AppColors.success)
+          : Text(
+              '$watched/$total',
+              style: TextStyle(
+                fontSize: 10,
+                height: 1.2,
+                fontWeight: FontWeight.w700,
+                color: AppColors.success,
+              ),
+            ),
+    );
+  }
+}
+
 class _RoundButton extends StatelessWidget {
-  const _RoundButton({required this.icon, required this.onTap});
+  const _RoundButton({
+    required this.icon,
+    required this.onTap,
+    this.color = Colors.white,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -1053,7 +1181,7 @@ class _RoundButton extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(9),
-          child: Icon(icon, size: 20, color: Colors.white),
+          child: Icon(icon, size: 20, color: color),
         ),
       ),
     );

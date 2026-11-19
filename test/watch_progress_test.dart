@@ -119,6 +119,59 @@ void main() {
         expect(entry.position, const Duration(minutes: 40));
         expect(entry.completed, isTrue);
       });
+
+      test('markWatchedAll flags a whole season in one go', () {
+        final store = WatchProgress();
+        store.record(
+          'ep:1',
+          const Duration(minutes: 5),
+          const Duration(minutes: 40),
+        );
+        var notifications = 0;
+        store.addListener(() => notifications++);
+
+        store.markWatchedAll(['ep:1', 'ep:2', 'ep:3']);
+
+        expect(store.entryFor('ep:1')!.completed, isTrue);
+        expect(store.entryFor('ep:2')!.completed, isTrue);
+        expect(store.entryFor('ep:3')!.completed, isTrue);
+        // The recorded duration for ep:1 is preserved by the bulk mark.
+        expect(store.entryFor('ep:1')!.duration, const Duration(minutes: 40));
+        expect(notifications, 1);
+
+        store.markWatchedAll(const []);
+        expect(notifications, 1);
+      });
+
+      test('clearAll removes a season in one go', () async {
+        final store = WatchProgress();
+        store.markWatchedAll(['ep:1', 'ep:2', 'ep:3']);
+        store.markWatched('ep:4');
+
+        await store.clearAll(['ep:1', 'ep:2', 'ep:3']);
+
+        expect(store.entryFor('ep:1'), isNull);
+        expect(store.entryFor('ep:2'), isNull);
+        expect(store.entryFor('ep:3'), isNull);
+        // Items outside the batch are untouched.
+        expect(store.entryFor('ep:4')!.completed, isTrue);
+      });
+
+      test('completedCount powers the season badges', () {
+        final store = WatchProgress();
+        store.markWatched('ep:1');
+        store.markWatched('ep:2');
+        store.record(
+          'ep:3',
+          const Duration(minutes: 2),
+          const Duration(minutes: 40),
+        );
+
+        expect(store.completedCount(['ep:1', 'ep:2', 'ep:3']), 2);
+        expect(store.completedCount(['ep:1', 'ep:2']), 2);
+        expect(store.completedCount(const []), 0);
+        expect(store.completedCount(['ep:99']), 0);
+      });
     });
 
     test('zero duration does not divide by zero', () {

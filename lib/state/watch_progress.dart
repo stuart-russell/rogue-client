@@ -84,6 +84,10 @@ class WatchProgress extends ChangeNotifier {
 
   WatchEntry? entryFor(String? id) => id == null ? null : _entries[id];
 
+  /// How many of [ids] are finished — used for season progress badges.
+  int completedCount(Iterable<String> ids) =>
+      ids.where((id) => _entries[id]?.completed ?? false).length;
+
   void record(
     String id,
     Duration position,
@@ -131,6 +135,38 @@ class WatchProgress extends ChangeNotifier {
     notifyListeners();
     _saveTimer?.cancel();
     _saveTimer = Timer(const Duration(seconds: 2), _save);
+  }
+
+  /// Flags a whole season (or any batch) watched in one notification.
+  void markWatchedAll(Iterable<String> ids) {
+    var changed = false;
+    for (final id in ids) {
+      final total = _entries[id]?.duration ?? Duration.zero;
+      _entries[id] = WatchEntry(
+        position: total,
+        duration: total,
+        updatedAt: DateTime.now(),
+        completed: true,
+      );
+      changed = true;
+    }
+    if (!changed) return;
+    _dirty = true;
+    notifyListeners();
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(seconds: 2), _save);
+  }
+
+  /// Removes a batch of entries (e.g. "mark season as unwatched").
+  Future<void> clearAll(Iterable<String> ids) async {
+    var changed = false;
+    for (final id in ids) {
+      if (_entries.remove(id) != null) changed = true;
+    }
+    if (!changed) return;
+    _dirty = true;
+    notifyListeners();
+    await _save();
   }
 
   Future<void> flush() async {
