@@ -253,7 +253,7 @@ node tool/make_manifest.mjs --version 1.2.0 --build 12 --tag v1.2.0 `
 ```powershell
 .\tool\build_windows.ps1   # release build (keeps the icon font intact)
 flutter analyze            # clean
-flutter test               # 86 tests: parsing, XMLTV, portals, favourites, recents,
+flutter test               # 91 tests: parsing, XMLTV, portals, favourites, recents,
                            # themes, updates, progress, resume UI, shell
 dart run tool\smoke_api.dart   # client against a throwaway local HTTP panel
 ```
