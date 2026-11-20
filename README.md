@@ -283,6 +283,10 @@ node tool/make_manifest.mjs --version 1.2.0 --build 12 --tag v1.2.0 `
 
 ## Checks
 
+Working on the code? Start with [`AGENTS.md`](AGENTS.md) — architecture,
+conventions, testing patterns and release playbooks for contributors and coding
+agents. `tool/check.ps1` runs formatting, the analyzer and the test suite.
+
 ```powershell
 .\tool\build_windows.ps1   # release build (keeps the icon font intact)
 flutter analyze            # clean
