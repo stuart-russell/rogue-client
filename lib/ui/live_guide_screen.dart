@@ -150,6 +150,10 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
 
   void _resumePreview({bool force = false}) {
     final model = AppScope.read(context);
+    if (model.preferences.performanceMode) {
+      _preview.release();
+      return;
+    }
     final catalog = model.catalog;
     var channels = catalog.channelsIn(_categoryId);
     if (_query.isNotEmpty) {
@@ -287,6 +291,7 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
 
     final selected = _selected(channels);
     final categories = catalog.categoriesFor(CatalogSegment.live);
+    final performance = model.preferences.performanceMode;
     final now = DateTime.now();
 
     // Phones get a now/next list instead of the 12-hour grid, and no silent
@@ -301,6 +306,10 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
           return;
         }
         if (!widget.active) return;
+        if (performance) {
+          await _preview.release();
+          return;
+        }
         final api = model.session.api;
         if (api == null) return;
         final url = api.liveUrl(
@@ -400,6 +409,7 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
                                 model: model,
                                 channel: selected,
                                 preview: _preview,
+                                performance: performance,
                               ),
                             if (!guide.hasData)
                               Padding(
@@ -734,11 +744,13 @@ class _Banner extends StatelessWidget {
     required this.model,
     required this.channel,
     required this.preview,
+    required this.performance,
   });
 
   final AppModel model;
   final LiveStream channel;
   final PreviewPlayer preview;
+  final bool performance;
 
   @override
   Widget build(BuildContext context) {
@@ -856,7 +868,28 @@ class _Banner extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (preview.hasVideo)
+                      if (performance)
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ChannelAvatar(
+                                name: channel.name,
+                                image: channel.icon,
+                                size: 84,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Preview off · performance mode',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (preview.hasVideo)
                         Video(
                           controller: preview.controller,
                           controls: NoVideoControls,

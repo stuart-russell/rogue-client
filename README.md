@@ -144,6 +144,9 @@ touch it.
 - **Appearance** — six palettes (Rogue, Midnight, Emerald, Violet, Gold,
   Graphite) applied live, remembered per device. Each palette is a full set of
   surfaces, borders, accents and text colours in `theme.dart` (`kPalettes`).
+- **Performance mode** — optional switch for low-power TVs: releases the guide
+  preview decoder/texture, skips artwork-derived accents and blurred backdrops,
+  and uses cheaper splashes. Everything else keeps working.
 - **Watch progress** — stored per movie/episode, shown as bars and ticks, with
   `Resume` / `From start` prompts. Items finish with under 1 min left for episodes
   and under 5 min for films; right-click an episode or poster (hold OK on TV)
@@ -293,7 +296,7 @@ agents. `tool/check.ps1` runs formatting, the analyzer and the test suite.
 ```powershell
 .\tool\build_windows.ps1   # release build (keeps the icon font intact)
 flutter analyze            # clean
-flutter test               # 99 tests: parsing, XMLTV, portals, favourites, recents,
+flutter test               # 102 tests: parsing, XMLTV, portals, favourites, recents,
                            # themes, updates, progress, resume UI, shell, focus
 dart run tool\smoke_api.dart   # client against a throwaway local HTTP panel
 ```

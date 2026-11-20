@@ -55,6 +55,19 @@ class PreviewPlayer {
     } catch (_) {}
   }
 
+  /// Stops playback and releases the decoder/texture without closing this
+  /// helper, so performance mode can reclaim memory and [show] can restart it.
+  Future<void> release() async {
+    if (_player == null && _controller == null) return;
+    _started = false;
+    _url = null;
+    try {
+      await _player?.dispose();
+    } catch (_) {}
+    _player = null;
+    _controller = null;
+  }
+
   Future<void> dispose() async {
     _closed = true;
     try {

@@ -106,6 +106,9 @@ Conventions you must follow:
 - **Android:** release manifests need `INTERNET` and cleartext traffic for
   `http://` panels; both are already set. Updating APKs requires a stable
   signing key — see `docs/releasing.md`.
+- **TV performance:** `PreferencesController.performanceMode` releases the guide
+  preview (`PreviewPlayer.release`), skips `accentFromArtwork`/`AmbientBackdrop`
+  blur and uses `NoSplash`. Keep expensive new effects behind this flag.
 - **TV focus:** the shell must not wrap content in a full-size focusable node
   (it traps directional traversal), and hidden `IndexedStack` tabs use
   `ExcludeFocus`. Use `isTv(context)` (Android + width >= 900) when a page needs

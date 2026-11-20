@@ -98,6 +98,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ]),
                   const SizedBox(height: 14),
+                  _section('Performance', [
+                    FocusRing(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Performance mode',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  'Turns off the guide preview video, artwork '
+                                  'colour extraction and blurred backdrops. '
+                                  'Recommended on low-power TVs.',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppColors.textMuted,
+                                    height: 1.45,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: prefs.performanceMode,
+                            onChanged: (value) =>
+                                prefs.setPerformanceMode(value),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 14),
                   _section('Updates', [const UpdatesPanel()]),
                   const SizedBox(height: 14),
                   _section('Account', [

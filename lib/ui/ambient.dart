@@ -38,10 +38,16 @@ Future<Color?> accentFromArtwork(String? url) async {
 /// The scrim is intentionally strong: fully opaque by ~58% of the height, so
 /// body copy sits on the app background rather than on the poster.
 class AmbientBackdrop extends StatelessWidget {
-  const AmbientBackdrop({super.key, required this.image, required this.accent});
+  const AmbientBackdrop({
+    super.key,
+    required this.image,
+    required this.accent,
+    this.performance = false,
+  });
 
   final String? image;
   final Color accent;
+  final bool performance;
 
   @override
   Widget build(BuildContext context) {
@@ -52,23 +58,34 @@ class AmbientBackdrop extends StatelessWidget {
           children: [
             if (image != null && image!.isNotEmpty)
               Positioned.fill(
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(
-                    sigmaX: 46,
-                    sigmaY: 46,
-                    tileMode: TileMode.decal,
-                  ),
-                  child: Opacity(
-                    opacity: 0.45,
-                    child: CachedNetworkImage(
-                      imageUrl: image!,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 480,
-                      placeholder: (_, _) => const SizedBox.shrink(),
-                      errorWidget: (_, _, _) => const SizedBox.shrink(),
-                    ),
-                  ),
-                ),
+                child: performance
+                    ? Opacity(
+                        opacity: 0.18,
+                        child: CachedNetworkImage(
+                          imageUrl: image!,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 480,
+                          placeholder: (_, _) => const SizedBox.shrink(),
+                          errorWidget: (_, _, _) => const SizedBox.shrink(),
+                        ),
+                      )
+                    : ImageFiltered(
+                        imageFilter: ImageFilter.blur(
+                          sigmaX: 46,
+                          sigmaY: 46,
+                          tileMode: TileMode.decal,
+                        ),
+                        child: Opacity(
+                          opacity: 0.45,
+                          child: CachedNetworkImage(
+                            imageUrl: image!,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 480,
+                            placeholder: (_, _) => const SizedBox.shrink(),
+                            errorWidget: (_, _, _) => const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
               ),
             DecoratedBox(
               decoration: BoxDecoration(

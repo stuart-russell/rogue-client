@@ -186,7 +186,10 @@ class AppColors {
 
 const kRadii = 14.0;
 
-ThemeData buildAppTheme([Palette palette = roguePalette]) {
+ThemeData buildAppTheme([
+  Palette palette = roguePalette,
+  bool performance = false,
+]) {
   final scheme =
       ColorScheme.fromSeed(
         seedColor: palette.accent,
@@ -208,7 +211,11 @@ ThemeData buildAppTheme([Palette palette = roguePalette]) {
     scaffoldBackgroundColor: palette.background,
     canvasColor: palette.background,
     dividerColor: palette.border,
-    splashFactory: InkSparkle.splashFactory,
+    // InkSparkle is a fragment-shader splash; a plain no-splash surface is
+    // cheaper on low-power TV GPUs.
+    splashFactory: performance
+        ? NoSplash.splashFactory
+        : InkSparkle.splashFactory,
     visualDensity: VisualDensity.standard,
     // Every Material control needs a focus state that is obvious from across
     // a room; the remote has no pointer to show where it is.

@@ -12,10 +12,12 @@ class PreferencesController extends ChangeNotifier {
   static const _kAdultPinHash = 'parental.pinHash';
   static const _kAdultPinSalt = 'parental.pinSalt';
   static const _kPalette = 'appearance.palette';
+  static const _kPerformance = 'playback.performanceMode';
 
   String liveExtension = 'ts';
   bool autoDownloadGuide = true;
   bool adultFilterEnabled = false;
+  bool performanceMode = false;
   String paletteId = roguePalette.id;
   bool loaded = false;
 
@@ -32,6 +34,7 @@ class PreferencesController extends ChangeNotifier {
       liveExtension = prefs.getString(_kLiveExtension) ?? 'ts';
       autoDownloadGuide = prefs.getBool(_kAutoGuide) ?? true;
       adultFilterEnabled = prefs.getBool(_kAdultFilter) ?? false;
+      performanceMode = prefs.getBool(_kPerformance) ?? false;
       paletteId = paletteById(prefs.getString(_kPalette)).id;
       _pinHash = prefs.getString(_kAdultPinHash);
       _pinSalt = prefs.getString(_kAdultPinSalt);
@@ -63,6 +66,14 @@ class PreferencesController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kAdultFilter, value);
+  }
+
+  Future<void> setPerformanceMode(bool value) async {
+    if (value == performanceMode) return;
+    performanceMode = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kPerformance, value);
   }
 
   Future<void> setPalette(String id) async {

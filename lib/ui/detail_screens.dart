@@ -40,6 +40,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<void> _loadAccent(String? url) async {
+    if (AppScope.read(context).preferences.performanceMode) return;
     final color = await accentFromArtwork(url);
     if (color != null && mounted) setState(() => _accent = color);
   }
@@ -80,6 +81,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final backdrop = api?.absolute(
       info?.backdrop ?? info?.poster ?? widget.movie.icon,
     );
+    final performance = model.preferences.performanceMode;
     final watch = model.progress.entryFor('vod:${widget.movie.streamId}');
     final isFavourite = model.favourites.contains(
       FavouriteType.vod,
@@ -95,7 +97,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: AmbientBackdrop(image: backdrop, accent: _accent),
+            child: AmbientBackdrop(
+              image: backdrop,
+              accent: _accent,
+              performance: performance,
+            ),
           ),
           CustomScrollView(
             slivers: [
@@ -132,24 +138,30 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     fit: StackFit.expand,
                     children: [
                       if (backdrop != null)
-                        ShaderMask(
-                          blendMode: BlendMode.dstIn,
-                          shaderCallback: (rect) => const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white,
-                              Colors.white,
-                              Colors.transparent,
-                            ],
-                            stops: [0.0, 0.6, 1.0],
-                          ).createShader(rect),
-                          child: CachedNetworkImage(
-                            imageUrl: backdrop,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 1400,
-                          ),
-                        )
+                        performance
+                            ? CachedNetworkImage(
+                                imageUrl: backdrop,
+                                fit: BoxFit.cover,
+                                memCacheWidth: 900,
+                              )
+                            : ShaderMask(
+                                blendMode: BlendMode.dstIn,
+                                shaderCallback: (rect) => const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.white,
+                                    Colors.white,
+                                    Colors.transparent,
+                                  ],
+                                  stops: [0.0, 0.6, 1.0],
+                                ).createShader(rect),
+                                child: CachedNetworkImage(
+                                  imageUrl: backdrop,
+                                  fit: BoxFit.cover,
+                                  memCacheWidth: 1400,
+                                ),
+                              )
                       else
                         ColoredBox(color: AppColors.surfaceHigh),
                       DecoratedBox(
@@ -479,6 +491,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   }
 
   Future<void> _loadAccent(String? url) async {
+    if (AppScope.read(context).preferences.performanceMode) return;
     final color = await accentFromArtwork(url);
     if (color != null && mounted) setState(() => _accent = color);
   }
@@ -601,6 +614,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     final episodes = (_season != null && info != null)
         ? (info.seasons[_season] ?? const <Episode>[])
         : const <Episode>[];
+    final performance = model.preferences.performanceMode;
     final tv = isTv(context);
 
     return Scaffold(
@@ -608,7 +622,11 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: AmbientBackdrop(image: backdrop, accent: _accent),
+            child: AmbientBackdrop(
+              image: backdrop,
+              accent: _accent,
+              performance: performance,
+            ),
           ),
           CustomScrollView(
             slivers: [
@@ -657,24 +675,30 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                     fit: StackFit.expand,
                     children: [
                       if (backdrop != null)
-                        ShaderMask(
-                          blendMode: BlendMode.dstIn,
-                          shaderCallback: (rect) => const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white,
-                              Colors.white,
-                              Colors.transparent,
-                            ],
-                            stops: [0.0, 0.6, 1.0],
-                          ).createShader(rect),
-                          child: CachedNetworkImage(
-                            imageUrl: backdrop,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 1400,
-                          ),
-                        )
+                        performance
+                            ? CachedNetworkImage(
+                                imageUrl: backdrop,
+                                fit: BoxFit.cover,
+                                memCacheWidth: 900,
+                              )
+                            : ShaderMask(
+                                blendMode: BlendMode.dstIn,
+                                shaderCallback: (rect) => const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.white,
+                                    Colors.white,
+                                    Colors.transparent,
+                                  ],
+                                  stops: [0.0, 0.6, 1.0],
+                                ).createShader(rect),
+                                child: CachedNetworkImage(
+                                  imageUrl: backdrop,
+                                  fit: BoxFit.cover,
+                                  memCacheWidth: 1400,
+                                ),
+                              )
                       else
                         ColoredBox(color: AppColors.surfaceHigh),
                       DecoratedBox(

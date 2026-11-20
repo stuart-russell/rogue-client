@@ -21,6 +21,7 @@ class _RogueAppState extends State<RogueApp> {
   final LoggingNavigatorObserver _observer = LoggingNavigatorObserver();
 
   late Palette _palette = _model.preferences.palette;
+  late bool _performance = _model.preferences.performanceMode;
   ThemeData? _theme;
 
   @override
@@ -33,10 +34,12 @@ class _RogueAppState extends State<RogueApp> {
 
   void _onModelChanged() {
     final palette = _model.preferences.palette;
-    if (palette.id == _palette.id) return;
+    final performance = _model.preferences.performanceMode;
+    if (palette.id == _palette.id && performance == _performance) return;
     AppColors.current = palette;
     setState(() {
       _palette = palette;
+      _performance = performance;
       _theme = null;
     });
   }
@@ -56,7 +59,7 @@ class _RogueAppState extends State<RogueApp> {
       child: MaterialApp(
         title: 'Rogue',
         debugShowCheckedModeBanner: false,
-        theme: _theme ??= buildAppTheme(_palette),
+        theme: _theme ??= buildAppTheme(_palette, _performance),
         navigatorObservers: [_observer],
         builder: (context, child) {
           final content = FocusRevealer(
