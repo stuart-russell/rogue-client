@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../state/app_model.dart';
@@ -171,7 +172,6 @@ class SearchField extends StatefulWidget {
     this.hint = 'Search…',
     this.autofocus = false,
     this.onSubmitted,
-    this.traversal = true,
   });
 
   final TextEditingController controller;
@@ -180,22 +180,59 @@ class SearchField extends StatefulWidget {
   final bool autofocus;
   final ValueChanged<String>? onSubmitted;
 
-  /// False for header fields: a D-pad focus landing in a text field traps arrow
-  /// keys in the caret, so those are pointer-only and the Search tab is the
-  /// keyboard route.
-  final bool traversal;
-
   @override
   State<SearchField> createState() => _SearchFieldState();
 }
 
 class _SearchFieldState extends State<SearchField> {
-  late final FocusNode _focus = FocusNode(skipTraversal: !widget.traversal);
+  late final FocusNode _focus = FocusNode(onKeyEvent: _onKey);
 
   @override
   void dispose() {
     _focus.dispose();
     super.dispose();
+  }
+
+  /// Move the D-pad out of the text field instead of leaving it in the caret.
+  /// The remote still needs Left/Right for editing; Up/Down are free.
+  void _leaveField(TraversalDirection direction) {
+    Actions.invoke(context, DirectionalFocusIntent(direction));
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    switch (event.logicalKey) {
+      case LogicalKeyboardKey.arrowDown:
+        _leaveField(TraversalDirection.down);
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.arrowUp:
+        _leaveField(TraversalDirection.up);
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.arrowLeft:
+        // Left at the start of the text (including an empty field) should
+        // leave the field rather than trapping focus in the caret.
+        final leftSelection = widget.controller.selection;
+        if (!leftSelection.isValid || leftSelection.baseOffset <= 0) {
+          _leaveField(TraversalDirection.left);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      case LogicalKeyboardKey.arrowRight:
+        final textLength = widget.controller.text.length;
+        final rightSelection = widget.controller.selection;
+        if (!rightSelection.isValid ||
+            rightSelection.baseOffset >= textLength) {
+          _leaveField(TraversalDirection.right);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      case LogicalKeyboardKey.escape:
+        node.unfocus();
+        return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -205,6 +242,9 @@ class _SearchFieldState extends State<SearchField> {
       focusNode: _focus,
       autofocus: widget.autofocus,
       onChanged: widget.onChanged,
+      // Runs before EditableText unfocuses the field (onSubmitted runs after),
+      // so the keyboard's Search/Done action lands on the results.
+      onEditingComplete: () => _leaveField(TraversalDirection.down),
       onSubmitted: widget.onSubmitted,
       style: const TextStyle(fontSize: 13.5),
       decoration: InputDecoration(

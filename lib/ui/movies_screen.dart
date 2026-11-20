@@ -53,17 +53,6 @@ class _MoviesScreenState extends State<MoviesScreen> {
           busy: catalog.loading[CatalogSegment.vod] ?? false,
           onPressed: () => catalog.load(CatalogSegment.vod, force: true),
         ),
-        const SizedBox(width: 10),
-        if (!compact)
-          SizedBox(
-            width: 260,
-            child: SearchField(
-              controller: _search,
-              hint: 'Search movies…',
-              traversal: false,
-              onChanged: (value) => setState(() => _query = value.trim()),
-            ),
-          ),
       ],
       child: !ready
           ? segmentStatus(
@@ -74,14 +63,14 @@ class _MoviesScreenState extends State<MoviesScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (compact) ...[
-                  SearchField(
-                    controller: _search,
-                    hint: 'Search movies…',
-                    onChanged: (value) => setState(() => _query = value.trim()),
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                // Keep search in the content column so D-pad Up from the
+                // category chips/grid can reach it.
+                SearchField(
+                  controller: _search,
+                  hint: 'Search movies…',
+                  onChanged: (value) => setState(() => _query = value.trim()),
+                ),
+                const SizedBox(height: 10),
                 CategoryChips(
                   categories: categories,
                   total: catalog.countFor(CatalogSegment.vod, null),

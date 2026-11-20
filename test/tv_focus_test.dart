@@ -6,10 +6,10 @@ import 'package:rogue/ui/focusable_tap.dart';
 import 'package:rogue/ui/widgets.dart';
 
 /// Mirrors the shell: sidebar on the left, a header search field and a grid on
-/// the right. A D-pad must be able to leave the sidebar and reach the grid, and
-/// must never fall into the (non-traversable) header search field.
+/// the right. The header field is reachable with the D-pad, but Up/Down must
+/// leave it instead of trapping the caret.
 void main() {
-  testWidgets('D-pad reaches the content grid past the header search field', (
+  testWidgets('header search and content stay reachable with the D-pad', (
     tester,
   ) async {
     FocusManager.instance.highlightStrategy =
@@ -25,10 +25,11 @@ void main() {
 
     final sidebar = List.generate(3, (_) => FocusNode());
     final cards = List.generate(4, (_) => FocusNode());
-    final search = FocusNode();
     final taps = List.filled(4, 0);
+    final controller = TextEditingController();
     addTearDown(() {
-      for (final node in [...sidebar, ...cards, search]) {
+      controller.dispose();
+      for (final node in [...sidebar, ...cards]) {
         node.dispose();
       }
     });
@@ -59,11 +60,7 @@ void main() {
               Expanded(
                 child: Column(
                   children: [
-                    SearchField(
-                      controller: TextEditingController(),
-                      traversal: false,
-                      onChanged: (_) {},
-                    ),
+                    SearchField(controller: controller, onChanged: (_) {}),
                     Expanded(
                       child: GridView.count(
                         crossAxisCount: 2,
@@ -90,11 +87,21 @@ void main() {
 
     expect(sidebar[0].hasPrimaryFocus, isTrue);
 
-    // Right from the sidebar must land on a poster, not the search box.
+    final field = tester.widget<TextField>(find.byType(TextField)).focusNode!;
+
+    // Right from the sidebar reaches the content; it may land on the header
+    // field or directly on a poster.
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
-    expect(cards.any((node) => node.hasFocus), isTrue);
-    expect(search.hasFocus, isFalse);
+    expect(field.hasFocus || cards.any((node) => node.hasFocus), isTrue);
+
+    // A focused header field must let Down through to the posters.
+    if (field.hasFocus) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+    }
+    expect(field.hasFocus, isFalse);
+    expect(cards.any((node) => node.hasPrimaryFocus), isTrue);
 
     final first = cards.indexWhere((node) => node.hasPrimaryFocus);
     expect(taps[first], 0);
@@ -108,6 +115,25 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
     expect(cards.where((node) => node.hasPrimaryFocus), hasLength(1));
-    expect(search.hasFocus, isFalse);
+
+    // Header fields are traversable, and the keyboard's submit action lands
+    // on the results instead of leaving focus in the caret.
+    field.requestFocus();
+    await tester.pump();
+    expect(field.skipTraversal, isFalse);
+    await tester.enterText(find.byType(TextField), 'test');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(field.hasFocus, isFalse);
+    expect(cards.any((node) => node.hasPrimaryFocus), isTrue);
+
+    // An empty field at the caret start lets Left fall through to the sidebar.
+    controller.clear();
+    field.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(field.hasFocus, isFalse);
+    expect(sidebar.any((node) => node.hasPrimaryFocus), isTrue);
   });
 }

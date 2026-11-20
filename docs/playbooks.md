@@ -14,8 +14,9 @@ pattern named in each step instead of inventing a new one.
      primary tabs.
 3. Extend `shell_test.dart` (it renders every tab) and, if the page shows data,
    add a focused widget test with fake stores.
-4. Respect `isCompact(context)`; move any header search field into the body on
-   phones (`traversal: false` in the header).
+4. Respect `isCompact(context)`; keep search fields in the content column above
+   the chips/results so D-pad Up can reach them (see `SearchField`, which also
+   handles Up/Down and the submit action itself).
 
 ## Add persisted user state
 

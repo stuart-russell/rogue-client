@@ -357,16 +357,6 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
           busy: catalog.loading[CatalogSegment.live] ?? false,
           onPressed: () => catalog.load(CatalogSegment.live, force: true),
         ),
-        const SizedBox(width: 10),
-        SizedBox(
-          width: 200,
-          child: SearchField(
-            controller: _search,
-            hint: 'Find a channel…',
-            traversal: false,
-            onChanged: (value) => setState(() => _query = value.trim()),
-          ),
-        ),
       ],
       child: catalog.countFor(CatalogSegment.live, null) == 0
           ? segmentStatus(
@@ -374,80 +364,86 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
               segment: CatalogSegment.live,
               onRetry: () => catalog.load(CatalogSegment.live, force: true),
             )
-          : Row(
+          : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CategoryRail(
-                  items: categoriesToRail(
-                    categories,
-                    catalog.countFor(CatalogSegment.live, null),
-                    (id) => catalog.countFor(CatalogSegment.live, id),
-                  ),
-                  selected: _categoryId,
-                  onSelected: (id) => setState(() {
-                    _categoryId = id;
-                    _selectedId = null;
-                  }),
+                // Keep search in the content column so D-pad Up from the
+                // category rail or grid can reach it.
+                SearchField(
+                  controller: _search,
+                  hint: 'Find a channel…',
+                  onChanged: (value) => setState(() => _query = value.trim()),
                 ),
+                const SizedBox(height: 10),
                 Expanded(
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (selected != null)
-                        _Banner(
-                          model: model,
-                          channel: selected,
-                          channels: channels,
-                          index: channels.indexOf(selected),
-                          preview: _preview,
-                          onToggleMute: () async {
-                            await _preview.toggleMute();
-                            if (mounted) setState(() {});
-                          },
-                          onExpand: () => _openMedia([
-                            for (final c in channels) liveToMedia(model, c),
-                          ], channels.indexOf(selected)),
+                      CategoryRail(
+                        items: categoriesToRail(
+                          categories,
+                          catalog.countFor(CatalogSegment.live, null),
+                          (id) => catalog.countFor(CatalogSegment.live, id),
                         ),
-                      if (!guide.hasData)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_month_outlined,
-                                size: 16,
-                                color: AppColors.textMuted,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  guide.error ?? 'Guide data not loaded yet — channels are listed without programmes.',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: guide.loading
-                                    ? null
-                                    : () => guide.load(force: true),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.accent,
-                                ),
-                                child: const Text('Load guide'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      const SizedBox(height: 12),
+                        selected: _categoryId,
+                        onSelected: (id) => setState(() {
+                          _categoryId = id;
+                          _selectedId = null;
+                        }),
+                      ),
                       Expanded(
-                        child: channels.isEmpty
-                            ? const StatusPane(
-                                icon: Icons.search_off_rounded,
-                                title: 'No channels match',
-                              )
-                            : _buildGrid(model, channels, selected, now),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (selected != null)
+                              _Banner(
+                                model: model,
+                                channel: selected,
+                                preview: _preview,
+                              ),
+                            if (!guide.hasData)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_month_outlined,
+                                      size: 16,
+                                      color: AppColors.textMuted,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        guide.error ?? 'Guide data not loaded yet — channels are listed without programmes.',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: guide.loading
+                                          ? null
+                                          : () => guide.load(force: true),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.accent,
+                                      ),
+                                      child: const Text('Load guide'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: channels.isEmpty
+                                  ? const StatusPane(
+                                      icon: Icons.search_off_rounded,
+                                      title: 'No channels match',
+                                    )
+                                  : _buildGrid(model, channels, selected, now),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -737,20 +733,12 @@ class _Banner extends StatelessWidget {
   const _Banner({
     required this.model,
     required this.channel,
-    required this.channels,
-    required this.index,
     required this.preview,
-    required this.onToggleMute,
-    required this.onExpand,
   });
 
   final AppModel model;
   final LiveStream channel;
-  final List<LiveStream> channels;
-  final int index;
   final PreviewPlayer preview;
-  final Future<void> Function() onToggleMute;
-  final VoidCallback onExpand;
 
   @override
   Widget build(BuildContext context) {
@@ -885,30 +873,6 @@ class _Banner extends StatelessWidget {
                             ),
                           ),
                         ),
-                      Positioned(
-                        left: 6,
-                        right: 6,
-                        bottom: 6,
-                        child: Row(
-                          children: [
-                            _PreviewButton(
-                              icon: preview.isMuted
-                                  ? Icons.volume_off_rounded
-                                  : Icons.volume_up_rounded,
-                              tooltip: preview.isMuted
-                                  ? 'Unmute preview'
-                                  : 'Mute preview',
-                              onTap: onToggleMute,
-                            ),
-                            const Spacer(),
-                            _PreviewButton(
-                              icon: Icons.open_in_full_rounded,
-                              tooltip: 'Watch full screen',
-                              onTap: () async => onExpand(),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -925,37 +889,6 @@ class _Banner extends StatelessWidget {
     if (left.isNegative) return 'ending';
     if (left.inMinutes < 1) return 'less than a minute left';
     return '${left.inMinutes} min left';
-  }
-}
-
-class _PreviewButton extends StatelessWidget {
-  const _PreviewButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final Future<void> Function() onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.black.withValues(alpha: 0.55),
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: () => onTap(),
-          child: Padding(
-            padding: const EdgeInsets.all(5),
-            child: Icon(icon, size: 15, color: Colors.white),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -1010,12 +943,26 @@ class _ChannelRow extends StatelessWidget {
       onSecondaryTapUp: (details) => onContextMenu(details.globalPosition),
       builder: (context, focused) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12),
+        foregroundDecoration: focused
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.accent, width: 2),
+              )
+            : null,
         decoration: BoxDecoration(
-          color: selected
+          color: focused
+              ? AppColors.accent.withValues(alpha: 0.2)
+              : selected
               ? AppColors.accent.withValues(alpha: 0.12)
-              : focused
-              ? AppColors.surfaceHigh
               : Colors.transparent,
+          boxShadow: focused
+              ? [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.28),
+                    blurRadius: 12,
+                  ),
+                ]
+              : const [],
           border: Border(
             bottom: BorderSide(color: AppColors.border, width: 0.6),
             left: BorderSide(

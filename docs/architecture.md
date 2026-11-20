@@ -46,16 +46,31 @@ constructor parameters so tests can replace them with fakes.
 - Screens: guide (`live_guide_screen`), movies, series, search, recents,
   favourites, settings; detail pages and the player are pushed routes.
 
-Responsive helpers live in `lib/ui/responsive.dart` (`isCompact`, `pagePadding`,
-`pageTopPadding`). The shell's own breakpoint is 900.
+Responsive helpers live in `lib/ui/responsive.dart` (`isCompact`, `isTv`,
+`pagePadding`, `pageTopPadding`). The shell's own breakpoint is 900. `isTv` is
+Android at width >= 900; detail pages use it to shorten vertical chrome, and the
+TV shell collapses the sidebar to a 64 px icon rail while focus is in the page.
+`TvScale` wraps all TV routes and renders a 0.9x UI, so text, cards and padding
+shrink together (desktop and phones are unscaled). `FocusRing` wraps Settings
+rows/controls and draws a 2 px accent border plus a light tint around whichever
+descendant has focus.
 
 ## Focus / TV
 
 `FocusableTap` wraps tappable items with `FocusableActionDetector`: directional
-focus, Enter/Select/Space activation, a focus ring via its builder, and
-`ensureVisible` so lists follow focus. Header search fields deliberately skip
-traversal. Do not put a full-size `Focus` around page content — it captures
-directional traversal and blocks entry into lists.
+focus, Enter/Select/Space activation, and a focus ring via its builder. A short
+Select activates on release; holding it for 550 ms synthesises the same
+`onLongPressStart` as touch so context menus work with a remote. It keys the
+ring off `onFocusChange`, not `onShowFocusHighlight`, because Android TV can stay
+in touch highlight mode. `FocusRevealer` wraps the app and scrolls the
+primary focus into view across nested scrollables; `main()` forces
+`FocusHighlightStrategy.alwaysTraditional` so Material buttons and switches draw
+their focus state. Search fields live in the content column (not the far-right
+header) so Up from the chips/grid can reach them; they handle Up/Down and the
+keyboard's submit action by moving focus out, so they cannot trap the remote.
+Hidden `IndexedStack` tabs are wrapped in `ExcludeFocus`. Do not put a full-size
+`Focus` around page content - it captures directional traversal and blocks entry
+into lists.
 
 ## Player
 

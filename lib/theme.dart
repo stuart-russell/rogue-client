@@ -210,6 +210,53 @@ ThemeData buildAppTheme([Palette palette = roguePalette]) {
     dividerColor: palette.border,
     splashFactory: InkSparkle.splashFactory,
     visualDensity: VisualDensity.standard,
+    // Every Material control needs a focus state that is obvious from across
+    // a room; the remote has no pointer to show where it is.
+    focusColor: palette.accent.withValues(alpha: 0.24),
+    hoverColor: palette.text.withValues(alpha: 0.06),
+    iconButtonTheme: IconButtonThemeData(
+      style: ButtonStyle(
+        overlayColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.focused)
+              ? palette.accent.withValues(alpha: 0.3)
+              : null,
+        ),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: ButtonStyle(
+        overlayColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.focused)
+              ? palette.accent.withValues(alpha: 0.22)
+              : null,
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: ButtonStyle(
+        overlayColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.focused)
+              ? palette.accent.withValues(alpha: 0.22)
+              : null,
+        ),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: ButtonStyle(
+        overlayColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.focused)
+              ? Colors.white.withValues(alpha: 0.24)
+              : null,
+        ),
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      overlayColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.focused)
+            ? palette.accent.withValues(alpha: 0.22)
+            : null,
+      ),
+    ),
     iconTheme: IconThemeData(color: palette.text, size: 20),
     textTheme: TextTheme(
       displayLarge: const TextStyle(

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../state/app_model.dart';
 import '../state/catalog_controller.dart';
 import '../theme.dart';
+import '../updates/app_version.dart';
+import 'focus_ring.dart';
+import 'focusable_tap.dart';
 import 'pin_dialog.dart';
 import 'updates_panel.dart';
 import 'responsive.dart';
@@ -136,39 +139,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        const Text(
-                          'Live format',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'ts', label: Text('MPEG-TS')),
-                            ButtonSegment(value: 'm3u8', label: Text('HLS')),
-                          ],
-                          selected: {model.preferences.liveExtension},
-                          onSelectionChanged: (selection) => model.preferences
-                              .setLiveExtension(selection.first),
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.resolveWith(
-                              (states) => states.contains(WidgetState.selected)
-                                  ? AppColors.accent.withValues(alpha: 0.18)
-                                  : AppColors.surface,
-                            ),
-                            foregroundColor: WidgetStateProperty.all(
-                              AppColors.text,
-                            ),
-                            side: WidgetStateProperty.all(
-                              BorderSide(color: AppColors.border),
+                    FocusRing(
+                      child: Row(
+                        children: [
+                          const Text(
+                            'Live format',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 16),
+                          SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment(
+                                value: 'ts',
+                                label: Text('MPEG-TS'),
+                              ),
+                              ButtonSegment(value: 'm3u8', label: Text('HLS')),
+                            ],
+                            selected: {model.preferences.liveExtension},
+                            onSelectionChanged: (selection) => model.preferences
+                                .setLiveExtension(selection.first),
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.resolveWith(
+                                (states) =>
+                                    states.contains(WidgetState.selected)
+                                    ? AppColors.accent.withValues(alpha: 0.18)
+                                    : AppColors.surface,
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                AppColors.text,
+                              ),
+                              side: WidgetStateProperty.all(
+                                BorderSide(color: AppColors.border),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -181,65 +190,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ]),
                   const SizedBox(height: 14),
                   _section('Parental controls', [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hide adult content',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                    FocusRing(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Hide adult content',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 3),
-                              Text(
-                                'Hides adult categories from the guide, movies, series and search. '
-                                'Turning the filter off requires the PIN.',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color: AppColors.textMuted,
-                                  height: 1.45,
+                                SizedBox(height: 3),
+                                Text(
+                                  'Hides adult categories from the guide, movies, series and search. '
+                                  'Turning the filter off requires the PIN.',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppColors.textMuted,
+                                    height: 1.45,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        Switch(
-                          value: prefs.adultFilterEnabled,
-                          onChanged: (value) => _setAdultFilter(model, value),
-                        ),
-                      ],
+                          Switch(
+                            value: prefs.adultFilterEnabled,
+                            onChanged: (value) => _setAdultFilter(model, value),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        OutlinedButton.icon(
-                          onPressed: () => _changePin(model),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.text,
-                            side: BorderSide(color: AppColors.border),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
+                        FocusRing(
+                          radius: 12,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _changePin(model),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.text,
+                              side: BorderSide(color: AppColors.border),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
                             ),
-                          ),
-                          icon: const Icon(Icons.pin_outlined, size: 16),
-                          label: Text(
-                            prefs.hasAdultPin ? 'Change PIN' : 'Set PIN',
+                            icon: const Icon(Icons.pin_outlined, size: 16),
+                            label: Text(
+                              prefs.hasAdultPin ? 'Change PIN' : 'Set PIN',
+                            ),
                           ),
                         ),
                         if (prefs.hasAdultPin)
-                          TextButton(
-                            onPressed: () => _removePin(model),
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.textMuted,
+                          FocusRing(
+                            radius: 12,
+                            child: TextButton(
+                              onPressed: () => _removePin(model),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.textMuted,
+                              ),
+                              child: const Text('Remove PIN'),
                             ),
-                            child: const Text('Remove PIN'),
                           ),
                       ],
                     ),
@@ -268,57 +285,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Download guide on launch',
-                                      style: TextStyle(fontSize: 13),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      'Fetches the panel XMLTV in the background and caches it.',
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        color: AppColors.textMuted,
+                          child: FocusRing(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Download guide on launch',
+                                        style: TextStyle(fontSize: 13),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'Fetches the panel XMLTV in the background and caches it.',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Switch(
-                                value: model.preferences.autoDownloadGuide,
-                                onChanged: (value) => model.preferences
-                                    .setAutoDownloadGuide(value),
-                              ),
-                            ],
+                                Switch(
+                                  value: model.preferences.autoDownloadGuide,
+                                  onChanged: (value) => model.preferences
+                                      .setAutoDownloadGuide(value),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
-                        OutlinedButton(
-                          onPressed: epg.loading
-                              ? null
-                              : () => _run(() => epg.load(force: true)),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.text,
-                            side: BorderSide(color: AppColors.border),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
+                        FocusRing(
+                          radius: 12,
+                          child: OutlinedButton(
+                            onPressed: epg.loading
+                                ? null
+                                : () => _run(() => epg.load(force: true)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.text,
+                              side: BorderSide(color: AppColors.border),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                            ),
+                            child: Text(
+                              epg.loading ? 'Updating…' : 'Update now',
                             ),
                           ),
-                          child: Text(epg.loading ? 'Updating…' : 'Update now'),
                         ),
                         const SizedBox(width: 8),
-                        TextButton(
-                          onPressed: epg.loading ? null : () => _run(epg.clear),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.textMuted,
+                        FocusRing(
+                          radius: 12,
+                          child: TextButton(
+                            onPressed: epg.loading
+                                ? null
+                                : () => _run(epg.clear),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.textMuted,
+                            ),
+                            child: const Text('Clear'),
                           ),
-                          child: const Text('Clear'),
                         ),
                       ],
                     ),
@@ -346,21 +376,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: OutlinedButton.icon(
-                        onPressed: catalog.busy
-                            ? null
-                            : () => _run(catalog.refreshAll),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.text,
-                          side: BorderSide(color: AppColors.border),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                      child: FocusRing(
+                        radius: 12,
+                        child: OutlinedButton.icon(
+                          onPressed: catalog.busy
+                              ? null
+                              : () => _run(catalog.refreshAll),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.text,
+                            side: BorderSide(color: AppColors.border),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
-                        ),
-                        icon: const Icon(Icons.refresh_rounded, size: 17),
-                        label: Text(
-                          catalog.busy ? 'Refreshing…' : 'Refresh everything',
+                          icon: const Icon(Icons.refresh_rounded, size: 17),
+                          label: Text(
+                            catalog.busy ? 'Refreshing…' : 'Refresh everything',
+                          ),
                         ),
                       ),
                     ),
@@ -377,27 +410,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () => _run(() async {
-                          await model.cache.removeAll();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Cache cleared. Catalogues will reload on next launch.',
+                      child: FocusRing(
+                        radius: 12,
+                        child: TextButton.icon(
+                          onPressed: () => _run(() async {
+                            await model.cache.removeAll();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Cache cleared. Catalogues will reload on next launch.',
+                                  ),
                                 ),
-                              ),
-                            );
-                          }
-                        }),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.textMuted,
+                              );
+                            }
+                          }),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textMuted,
+                          ),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 17,
+                          ),
+                          label: const Text('Clear cached data'),
                         ),
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          size: 17,
-                        ),
-                        label: const Text('Clear cached data'),
                       ),
                     ),
                   ]),
@@ -413,18 +449,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 14),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: FilledButton.tonalIcon(
-                        onPressed: () => _confirmLogout(context, model),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.surfaceHigh,
-                          foregroundColor: AppColors.text,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                      child: FocusRing(
+                        radius: 12,
+                        child: FilledButton.tonalIcon(
+                          onPressed: () => _confirmLogout(context, model),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.surfaceHigh,
+                            foregroundColor: AppColors.text,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
+                          icon: const Icon(Icons.logout_rounded, size: 17),
+                          label: const Text('Sign out'),
                         ),
-                        icon: const Icon(Icons.logout_rounded, size: 17),
-                        label: const Text('Sign out'),
                       ),
                     ),
                   ]),
@@ -435,7 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         AppMark(size: 13, showDot: false),
                         SizedBox(height: 8),
                         Text(
-                          'Rogue 1.0.0 · independent Xtream client\nNot affiliated with your provider.',
+                          'Rogue ${AppVersion.running.semver} · independent Xtream client\nNot affiliated with your provider.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
@@ -644,12 +683,12 @@ class _PaletteCardState extends State<_PaletteCard> {
     final palette = widget.palette;
     final selected = widget.selected;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
+    return FocusableTap(
+      onTap: widget.onTap,
+      builder: (context, focused) => MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
           width: widget.width,
@@ -658,13 +697,24 @@ class _PaletteCardState extends State<_PaletteCard> {
             color: palette.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected
+              color: focused
+                  ? palette.accent
+                  : selected
                   ? palette.accent
                   : (_hovered
                         ? palette.border.withValues(alpha: 1)
                         : palette.border.withValues(alpha: 0.7)),
-              width: selected ? 1.6 : 1,
+              width: focused ? 2 : (selected ? 1.6 : 1),
             ),
+            boxShadow: focused
+                ? [
+                    BoxShadow(
+                      color: palette.accent.withValues(alpha: 0.35),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : const [],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

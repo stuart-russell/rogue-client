@@ -6,6 +6,10 @@ import 'core/app_log.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Android TV can report touch mode even while a D-pad is driving focus;
+  // without this, Material buttons/switches never draw their focus state.
+  FocusManager.instance.highlightStrategy =
+      FocusHighlightStrategy.alwaysTraditional;
   await AppLog.init();
   AppLog.installHandlers();
   MediaKit.ensureInitialized();

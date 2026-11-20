@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'core/app_log.dart';
 import 'state/app_model.dart';
 import 'theme.dart';
+import 'ui/focus_revealer.dart';
 import 'ui/home_shell.dart';
 import 'ui/login_screen.dart';
+import 'ui/responsive.dart';
+import 'ui/tv_scale.dart';
 
 class RogueApp extends StatefulWidget {
   const RogueApp({super.key});
@@ -55,6 +58,12 @@ class _RogueAppState extends State<RogueApp> {
         debugShowCheckedModeBanner: false,
         theme: _theme ??= buildAppTheme(_palette),
         navigatorObservers: [_observer],
+        builder: (context, child) {
+          final content = FocusRevealer(
+            child: child ?? const SizedBox.shrink(),
+          );
+          return isTv(context) ? TvScale(child: content) : content;
+        },
         home: const _Gate(),
       ),
     );

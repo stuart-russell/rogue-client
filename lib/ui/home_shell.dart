@@ -6,10 +6,12 @@ import 'package:flutter/services.dart';
 
 import '../state/app_model.dart';
 import '../theme.dart';
+import 'focusable_tap.dart';
 import 'live_guide_screen.dart';
 import 'favourites_screen.dart';
 import 'movies_screen.dart';
 import 'recents_screen.dart';
+import 'responsive.dart';
 import 'search_screen.dart';
 import 'series_screen.dart';
 import 'settings_screen.dart';
@@ -56,9 +58,55 @@ class _HomeShellState extends State<HomeShell> {
     return (int.tryParse(raw ?? '') ?? 0).clamp(0, 6);
   }
 
+  final GlobalKey _sidebarKey = GlobalKey();
+  final GlobalKey _contentKey = GlobalKey();
   late int _index = _initialIndex();
   bool _bootstrapped = false;
+  bool _sidebarFocused = true;
   late final Set<int> _visited = {_index};
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addListener(_handleFocusChange);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_handleFocusChange);
+    super.dispose();
+  }
+
+  bool _isWithin(GlobalKey key, BuildContext focus) {
+    final target = key.currentContext;
+    if (target == null) return false;
+    if (identical(focus, target)) return true;
+    var inside = false;
+    focus.visitAncestorElements((element) {
+      if (identical(element, target)) {
+        inside = true;
+        return false;
+      }
+      return true;
+    });
+    return inside;
+  }
+
+  /// Collapse the TV rail while a page control owns focus. Focus on a route
+  /// scope (startup, dialogs) leaves the current state alone.
+  void _handleFocusChange() {
+    if (!mounted || !isTv(context)) return;
+    final focus = FocusManager.instance.primaryFocus?.context;
+    if (focus == null) return;
+    final inSidebar = _isWithin(_sidebarKey, focus);
+    final inContent = _isWithin(_contentKey, focus);
+
+    if (inSidebar) {
+      if (!_sidebarFocused) setState(() => _sidebarFocused = true);
+    } else if (inContent) {
+      if (_sidebarFocused) setState(() => _sidebarFocused = false);
+    }
+  }
 
   List<Widget> _buildPages() => [
     LiveGuideScreen(active: _index == 0),
@@ -131,7 +179,14 @@ class _HomeShellState extends State<HomeShell> {
               index: _index,
               children: [
                 for (var i = 0; i < pages.length; i++)
-                  _visited.contains(i) ? pages[i] : const SizedBox.shrink(),
+                  // IndexedStack lays out every page, so without this a D-pad
+                  // can land on controls in a tab that is not painted.
+                  ExcludeFocus(
+                    excluding: i != _index,
+                    child: _visited.contains(i)
+                        ? pages[i]
+                        : const SizedBox.shrink(),
+                  ),
               ],
             ),
           ),
@@ -140,12 +195,20 @@ class _HomeShellState extends State<HomeShell> {
     );
 
     if (wide) {
+      final tv = isTv(context);
+      final sidebarCollapsed = tv && !_sidebarFocused;
       return Scaffold(
         body: Row(
           children: [
-            _Sidebar(index: _index, onSelect: _select, model: model),
+            _Sidebar(
+              key: _sidebarKey,
+              index: _index,
+              onSelect: _select,
+              model: model,
+              collapsed: sidebarCollapsed,
+            ),
             VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
-            Expanded(child: content),
+            Expanded(key: _contentKey, child: content),
           ],
         ),
       );
@@ -246,107 +309,139 @@ class _HomeShellState extends State<HomeShell> {
 
 class _Sidebar extends StatelessWidget {
   const _Sidebar({
+    super.key,
     required this.index,
     required this.onSelect,
     required this.model,
+    required this.collapsed,
   });
 
   final int index;
   final ValueChanged<int> onSelect;
   final AppModel model;
+  final bool collapsed;
 
   @override
   Widget build(BuildContext context) {
     final account = model.session.account;
     final days = account?.daysRemaining;
 
-    return Container(
-      width: 224,
+    return AnimatedContainer(
+      key: const ValueKey('sidebar'),
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      width: collapsed ? 64 : 224,
       color: AppColors.backgroundElevated,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(22, 26, 22, 22),
-            child: AppMark(size: 19),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
-                for (var i = 0; i < _destinations.length; i++) ...[
-                  if (i == 6)
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 10,
-                      ),
-                      child: Divider(height: 1, color: AppColors.border),
-                    ),
-                  _SidebarTile(
-                    destination: _destinations[i],
-                    selected: index == i,
-                    onTap: () => onSelect(i),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (account != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 18),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // While the width animates, only reveal labels once they fit.
+          final compact = collapsed || constraints.maxWidth < 160;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 0 : 22,
+                  26,
+                  compact ? 0 : 22,
+                  22,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person_rounded,
-                          size: 15,
-                          color: AppColors.textMuted,
-                        ),
-                        const SizedBox(width: 7),
-                        Expanded(
-                          child: Text(
-                            model.session.username,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                            ),
+                child: compact
+                    ? Center(
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        MetaChip(
-                          label: days == null ? 'No expiry' : '$days days left',
-                          color: days != null && days <= 7
-                              ? AppColors.warning
-                              : AppColors.success,
+                      )
+                    : const AppMark(size: 19),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 12),
+                  children: [
+                    for (var i = 0; i < _destinations.length; i++) ...[
+                      if (i == 6)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: compact ? 4 : 10,
+                            vertical: 10,
+                          ),
+                          child: Divider(height: 1, color: AppColors.border),
                         ),
-                        const SizedBox(width: 6),
-                        MetaChip(
-                          label:
-                              '${account.activeConnections}/${account.maxConnections}',
-                        ),
-                      ],
-                    ),
+                      _SidebarTile(
+                        destination: _destinations[i],
+                        selected: index == i,
+                        collapsed: compact,
+                        onTap: () => onSelect(i),
+                      ),
+                    ],
                   ],
                 ),
               ),
-            ),
-        ],
+              if (!compact && constraints.maxWidth >= 200 && account != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 18),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.person_rounded,
+                              size: 15,
+                              color: AppColors.textMuted,
+                            ),
+                            const SizedBox(width: 7),
+                            Expanded(
+                              child: Text(
+                                model.session.username,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            MetaChip(
+                              label: days == null
+                                  ? 'No expiry'
+                                  : '$days days left',
+                              color: days != null && days <= 7
+                                  ? AppColors.warning
+                                  : AppColors.success,
+                            ),
+                            MetaChip(
+                              label:
+                                  '${account.activeConnections}/${account.maxConnections}',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -356,11 +451,13 @@ class _SidebarTile extends StatefulWidget {
   const _SidebarTile({
     required this.destination,
     required this.selected,
+    required this.collapsed,
     required this.onTap,
   });
 
   final _Destination destination;
   final bool selected;
+  final bool collapsed;
   final VoidCallback onTap;
 
   @override
@@ -369,17 +466,17 @@ class _SidebarTile extends StatefulWidget {
 
 class _SidebarTileState extends State<_SidebarTile> {
   bool _hovered = false;
-  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
     final selected = widget.selected;
     final hovered = _hovered;
-    final focused = _focused;
 
-    return FocusableActionDetector(
-      onShowFocusHighlight: (value) => setState(() => _focused = value),
-      child: MouseRegion(
+    return FocusableTap(
+      onTap: widget.onTap,
+      // Put the initial D-pad focus on the selected tab.
+      autofocus: selected,
+      builder: (context, focused) => MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         cursor: SystemMouseCursors.click,
@@ -389,7 +486,7 @@ class _SidebarTileState extends State<_SidebarTile> {
             color: selected
                 ? AppColors.accent.withValues(alpha: 0.13)
                 : focused
-                ? AppColors.surfaceHigh
+                ? AppColors.accent.withValues(alpha: 0.2)
                 : hovered
                 ? AppColors.surface.withValues(alpha: 0.8)
                 : Colors.transparent,
@@ -397,38 +494,54 @@ class _SidebarTileState extends State<_SidebarTile> {
               borderRadius: BorderRadius.circular(10),
               side: BorderSide(
                 color: focused ? AppColors.accent : Colors.transparent,
-                width: 1.4,
+                width: focused ? 1.6 : 1,
               ),
             ),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
+              // FocusableTap owns the focus node; a focusable InkWell here
+              // would create a second node whose ActivateIntent does nothing.
+              canRequestFocus: false,
               borderRadius: BorderRadius.circular(10),
               onTap: widget.onTap,
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.collapsed ? 0 : 12,
                   vertical: 11,
                 ),
                 child: Row(
+                  mainAxisAlignment: widget.collapsed
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
                   children: [
                     Icon(
                       selected
                           ? widget.destination.selectedIcon
                           : widget.destination.icon,
                       size: 19,
-                      color: selected ? AppColors.accent : AppColors.textMuted,
+                      color: selected || focused
+                          ? AppColors.accent
+                          : AppColors.textMuted,
                     ),
-                    const SizedBox(width: 12),
-                    Text(
-                      widget.destination.label,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        color: selected ? AppColors.text : AppColors.textMuted,
+                    if (!widget.collapsed) ...[
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          widget.destination.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: selected || focused
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: selected || focused
+                                ? AppColors.text
+                                : AppColors.textMuted,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

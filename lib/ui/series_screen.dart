@@ -53,18 +53,6 @@ class _SeriesScreenState extends State<SeriesScreen> {
           busy: catalog.loading[CatalogSegment.series] ?? false,
           onPressed: () => catalog.load(CatalogSegment.series, force: true),
         ),
-        if (!compact) ...[
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 260,
-            child: SearchField(
-              controller: _search,
-              hint: 'Search series…',
-              traversal: false,
-              onChanged: (value) => setState(() => _query = value.trim()),
-            ),
-          ),
-        ],
       ],
       child: !ready
           ? segmentStatus(
@@ -75,14 +63,14 @@ class _SeriesScreenState extends State<SeriesScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (compact) ...[
-                  SearchField(
-                    controller: _search,
-                    hint: 'Search series…',
-                    onChanged: (value) => setState(() => _query = value.trim()),
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                // Keep search in the content column so D-pad Up from the
+                // category chips/grid can reach it.
+                SearchField(
+                  controller: _search,
+                  hint: 'Search series…',
+                  onChanged: (value) => setState(() => _query = value.trim()),
+                ),
+                const SizedBox(height: 10),
                 CategoryChips(
                   categories: categories,
                   total: catalog.countFor(CatalogSegment.series, null),

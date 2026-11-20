@@ -4,6 +4,7 @@ import '../state/app_model.dart';
 import '../theme.dart';
 import '../updates/update_controller.dart';
 import '../updates/update_manifest.dart';
+import 'focus_ring.dart';
 
 /// Settings → Updates: version, check button, release notes and install action.
 class UpdatesPanel extends StatelessWidget {
@@ -47,29 +48,32 @@ class UpdatesPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: updates.busy || !updates.isConfigured
-                      ? null
-                      : () => updates.check(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.text,
-                    side: BorderSide(color: AppColors.border),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
+                FocusRing(
+                  radius: 12,
+                  child: OutlinedButton.icon(
+                    onPressed: updates.busy || !updates.isConfigured
+                        ? null
+                        : () => updates.check(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.text,
+                      side: BorderSide(color: AppColors.border),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                     ),
+                    icon: updates.busy
+                        ? SizedBox(
+                            width: 13,
+                            height: 13,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.textMuted,
+                            ),
+                          )
+                        : const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text('Check now'),
                   ),
-                  icon: updates.busy
-                      ? SizedBox(
-                          width: 13,
-                          height: 13,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.textMuted,
-                          ),
-                        )
-                      : const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Check now'),
                 ),
               ],
             ),
@@ -83,18 +87,21 @@ class UpdatesPanel extends StatelessWidget {
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
-                child: FilledButton.icon(
-                  onPressed: updates.restart,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 13,
+                child: FocusRing(
+                  radius: 12,
+                  child: FilledButton.icon(
+                    onPressed: updates.restart,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 13,
+                      ),
                     ),
+                    icon: const Icon(Icons.restart_alt_rounded, size: 17),
+                    label: const Text('Restart now'),
                   ),
-                  icon: const Icon(Icons.restart_alt_rounded, size: 17),
-                  label: const Text('Restart now'),
                 ),
               ),
             ],
@@ -188,13 +195,16 @@ class _ReleaseCard extends StatelessWidget {
                 ),
               ),
               if (updates.hasUpdate && updates.phase != UpdatePhase.staged)
-                TextButton(
-                  onPressed: updates.busy ? null : updates.skip,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textMuted,
-                    visualDensity: VisualDensity.compact,
+                FocusRing(
+                  radius: 12,
+                  child: TextButton(
+                    onPressed: updates.busy ? null : updates.skip,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textMuted,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('Skip this version'),
                   ),
-                  child: const Text('Skip this version'),
                 ),
             ],
           ),

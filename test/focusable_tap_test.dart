@@ -7,8 +7,10 @@ void main() {
   testWidgets('takes focus and activates from Enter/Space and taps', (
     tester,
   ) async {
+    // A remote can leave the highlight strategy in touch mode; the custom
+    // ring must still follow the focus node.
     FocusManager.instance.highlightStrategy =
-        FocusHighlightStrategy.alwaysTraditional;
+        FocusHighlightStrategy.alwaysTouch;
     addTearDown(
       () => FocusManager.instance.highlightStrategy =
           FocusHighlightStrategy.automatic,
@@ -60,4 +62,61 @@ void main() {
     await tester.pump();
     expect(taps, 4);
   });
+
+  testWidgets(
+    'holding Select opens long press, a short press taps on release',
+    (tester) async {
+      FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.alwaysTouch;
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.automatic,
+      );
+
+      var taps = 0;
+      Offset? holdPosition;
+      final node = FocusNode();
+      addTearDown(node.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                height: 120,
+                child: FocusableTap(
+                  focusNode: node,
+                  onTap: () => taps++,
+                  onLongPressStart: (details) =>
+                      holdPosition = details.globalPosition,
+                  builder: (context, focused) =>
+                      Text(focused ? 'focused' : 'idle'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      node.requestFocus();
+      await tester.pump();
+
+      // Short press: activate on release, no menu.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+      expect(taps, 1);
+      expect(holdPosition, isNull);
+
+      // Held Select: menu opens and the release must not also tap.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(holdPosition, isNotNull);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+      expect(taps, 1);
+    },
+  );
 }

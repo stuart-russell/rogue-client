@@ -601,6 +601,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     final episodes = (_season != null && info != null)
         ? (info.seasons[_season] ?? const <Episode>[])
         : const <Episode>[];
+    final tv = isTv(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -612,7 +613,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
           CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 380,
+                // A TV has far less vertical room than a desktop window; the
+                // tall banner otherwise pushes seasons/episodes off-screen.
+                expandedHeight: tv ? 200 : 380,
                 pinned: true,
                 backgroundColor: Colors.transparent,
                 forceMaterialTransparency: true,
@@ -696,15 +699,19 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
                     isCompact(context) ? 16 : 30,
-                    6,
+                    tv ? 0 : 6,
                     isCompact(context) ? 16 : 30,
-                    isCompact(context) ? 20 : 30,
+                    isCompact(context) ? 20 : (tv ? 16 : 30),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: isCompact(context) ? 130 : 170,
+                        width: tv
+                            ? 120
+                            : isCompact(context)
+                            ? 130
+                            : 170,
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
@@ -854,6 +861,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                           final complete =
                               episodes.isNotEmpty && watched == episodes.length;
                           return FocusableTap(
+                            // Land on the current season so the remote can
+                            // switch seasons as soon as the page opens.
+                            autofocus: tv && active,
                             onTap: () => setState(() => _season = season),
                             onLongPressStart: (details) => _showSeasonMenu(
                               details.globalPosition,

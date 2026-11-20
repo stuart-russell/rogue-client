@@ -114,8 +114,10 @@ touch it.
   live progress instead of the timeline grid, a full-width search box, three-up
   poster grids, tighter page padding and a five-tab bar (Guide / Movies / Series
   / Search / More) with Recents, Favourites and Settings behind **More**. The
-  player opens immersive and drops the desktop volume slider. Desktop and TV keep
-  the sidebar and the 12-hour timeline.
+  player opens immersive and drops the desktop volume slider. Desktop keeps the
+  sidebar; on TV it collapses to an icon rail while you're in a page and reopens
+  when focus returns, and the whole UI is scaled to 90% to fit more on screen.
+  TV and desktop keep the 12-hour timeline.
 - **Movies / Series** — responsive poster grids, category chips, local search, and
   detail pages with full-bleed artwork, an artwork-tinted ambient glow and a
   strong scrim for readability. Series have a season selector and play a whole
@@ -129,11 +131,11 @@ touch it.
   auto-advance to the next episode. A **CC menu** lists embedded subtitle tracks
   and follows mpv's auto-selection; `C` toggles captions.
 - **Recents** — last five channels, films and series played, with relative
-  timestamps. Right-click / long-press an entry to remove just that one; **Clear**
-  wipes the list.
-- **Favourites** — save channels, films and series from the context menu (the
-  guide uses right-click/long-press only); movie and series detail pages also
-  have a heart. The Favourites tab groups all three and stores them in
+  timestamps. Right-click / long-press (hold OK on TV) an entry to remove just
+  that one; **Clear** wipes the list.
+- **Favourites** - save channels, films and series from the context menu (the
+  guide uses right-click/long-press, i.e. hold OK on TV); movie and series
+  detail pages also have a heart. The Favourites tab groups all three and stores them in
   `favourites.json`.
 - **Parental controls** — a PIN-protected **Hide adult content** switch. Adult
   categories disappear from the guide, movies, series, search and favourites;
@@ -144,7 +146,8 @@ touch it.
   surfaces, borders, accents and text colours in `theme.dart` (`kPalettes`).
 - **Watch progress** — stored per movie/episode, shown as bars and ticks, with
   `Resume` / `From start` prompts. Items finish with under 1 min left for episodes
-  and under 5 min for films; right-click an episode or poster to mark it watched.
+  and under 5 min for films; right-click an episode or poster (hold OK on TV)
+  to mark it watched.
 - **Updates** — in-app checks, verified downloads and one-click install on both
   platforms. See [Updates](#updates).
 - Stale-while-revalidate catalogue cache: lists render instantly from disk, then
@@ -290,8 +293,8 @@ agents. `tool/check.ps1` runs formatting, the analyzer and the test suite.
 ```powershell
 .\tool\build_windows.ps1   # release build (keeps the icon font intact)
 flutter analyze            # clean
-flutter test               # 91 tests: parsing, XMLTV, portals, favourites, recents,
-                           # themes, updates, progress, resume UI, shell
+flutter test               # 99 tests: parsing, XMLTV, portals, favourites, recents,
+                           # themes, updates, progress, resume UI, shell, focus
 dart run tool\smoke_api.dart   # client against a throwaway local HTTP panel
 ```
 

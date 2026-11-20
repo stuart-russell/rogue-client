@@ -73,8 +73,9 @@ Conventions you must follow:
   `pageTopPadding()` instead of hardcoded insets.
 - **Anything tappable is `FocusableTap`** (`lib/ui/focusable_tap.dart`), not a
   bare `GestureDetector` — Android TV D-pad focus depends on it. Pass a builder
-  that draws a focus ring (`focused` flag). The only deliberate exception is the
-  guide's timeline programme cells (mouse-first).
+  that draws a focus ring (`focused` flag). A short Select activates on release;
+  holding it fires `onLongPressStart` for the context menus. The only deliberate
+  exception is the guide's timeline programme cells (mouse-first).
 - **Context menus:** long-press + right-click. Use
   `showItemMenu(context, position, favourite:, watchId:)`
   (`lib/ui/favourites_actions.dart`) for the standard favourite/watched actions;
@@ -106,8 +107,20 @@ Conventions you must follow:
   `http://` panels; both are already set. Updating APKs requires a stable
   signing key — see `docs/releasing.md`.
 - **TV focus:** the shell must not wrap content in a full-size focusable node
-  (it traps directional traversal), and header search fields are excluded from
-  traversal on purpose. `test/tv_focus_test.dart` guards this.
+  (it traps directional traversal), and hidden `IndexedStack` tabs use
+  `ExcludeFocus`. Use `isTv(context)` (Android + width >= 900) when a page needs
+  less vertical chrome than desktop (series detail shortens its banner). On TV
+  the sidebar collapses to a 64 px icon rail while focus is in the page and
+  reopens when focus returns; `HomeShell` tracks the rail/content keys for this.
+  The whole TV UI is wrapped in `TvScale` (0.9) so more rows and posters fit.
+  Settings rows/controls use `FocusRing` (`lib/ui/focus_ring.dart`) so the
+  remote's position is a 2 px accent ring, not Material's faint overlay.
+  `FocusRevealer` scrolls the focused control into view,
+  `main()` forces `FocusHighlightStrategy.alwaysTraditional` for Material focus
+  states, and `FocusableTap` draws its ring from `onFocusChange` (Android TV can
+  report touch mode). `SearchField` is traversable; Up/Down leave the field and
+  the keyboard's submit action moves to the results. `test/tv_focus_test.dart`
+  guards this.
 
 ## Releases (summary)
 
