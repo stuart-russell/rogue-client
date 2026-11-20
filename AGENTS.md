@@ -33,7 +33,7 @@ agents. Read it before changing code; follow the links for depth.
 
 ```powershell
 flutter pub get
-tool/check.ps1                 # format check + analyze + test (93 tests)
+tool/check.ps1                 # format check + analyze + test (105 tests)
 flutter run -d windows         # debug on the desktop
 dart run tool/mock_panel.dart  # local fake panel at http://127.0.0.1:8099
 ```
@@ -124,6 +124,15 @@ Conventions you must follow:
   report touch mode). `SearchField` is traversable; Up/Down leave the field and
   the keyboard's submit action moves to the results. `test/tv_focus_test.dart`
   guards this.
+- **TV player:** `player_screen.dart` moves the four directional keys explicitly
+  between `FocusNode`s instead of relying on traversal around the full-width
+  seek bar. Hidden controls are `ExcludeFocus`ed and focus returns to a dedicated
+  video-surface node; otherwise the focus scope re-focuses a hidden button and
+  OK silently toggles playback. The seek bar itself handles ±10 s.
+- **Fire TV keyboard:** `TvTextInput` (`lib/ui/widgets.dart`) retries
+  `TextInput.show` after focus and on OK; TV password/PIN fields request
+  `TextInputType.visiblePassword` because Fire TV ignores the first request for
+  secure editors. `test/tv_input_test.dart` guards the keyboard type.
 
 ## Releases (summary)
 

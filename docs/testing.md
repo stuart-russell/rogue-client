@@ -1,7 +1,7 @@
 # Testing
 
 `tool/check.ps1` runs `dart format --set-exit-if-changed`, `flutter analyze` and
-`flutter test`. Currently 93 tests; all must pass.
+`flutter test`. Currently 105 tests; all must pass.
 
 ## What to test where
 

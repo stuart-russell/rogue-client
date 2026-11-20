@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme.dart';
+import 'widgets.dart';
 
 /// Asks for a 4–8 digit PIN. Returns null when cancelled.
 ///
@@ -90,30 +91,34 @@ class _PinDialogState extends State<_PinDialog> {
             ),
             const SizedBox(height: 14),
           ],
-          TextField(
-            controller: _pin,
-            autofocus: true,
-            obscureText: true,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(8),
-            ],
-            onSubmitted: (_) => widget.confirm ? null : _submit(),
-            decoration: _decoration('PIN'),
-          ),
-          if (widget.confirm) ...[
-            const SizedBox(height: 12),
-            TextField(
-              controller: _confirm,
+          TvTextInput(
+            child: TextField(
+              controller: _pin,
+              autofocus: true,
               obscureText: true,
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(8),
               ],
-              onSubmitted: (_) => _submit(),
-              decoration: _decoration('Confirm PIN'),
+              onSubmitted: (_) => widget.confirm ? null : _submit(),
+              decoration: _decoration('PIN'),
+            ),
+          ),
+          if (widget.confirm) ...[
+            const SizedBox(height: 12),
+            TvTextInput(
+              child: TextField(
+                controller: _confirm,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(8),
+                ],
+                onSubmitted: (_) => _submit(),
+                decoration: _decoration('Confirm PIN'),
+              ),
             ),
           ],
           if (_error != null) ...[

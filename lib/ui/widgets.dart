@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../state/app_model.dart';
 import '../theme.dart';
 import 'focusable_tap.dart';
+import 'responsive.dart';
 
 final _timeFormat = DateFormat.Hm();
 final _dayFormat = DateFormat('EEE d MMM');
@@ -636,5 +639,78 @@ class SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(padding: padding, decoration: glassPanel(), child: child);
+  }
+}
+
+/// Keyboard type for obscured fields on TV.
+///
+/// Fire TV's IME ignores the first show request for secure (password-variation)
+/// editors, so D-pad focus alone leaves the user with no keyboard. Asking for
+/// the visible-password variation keeps the text obscured in the UI but uses a
+/// keyboard the leanback IME reliably opens.
+TextInputType tvSecureKeyboardType(BuildContext context) =>
+    isTv(context) ? TextInputType.visiblePassword : TextInputType.text;
+
+/// Keeps the TV on-screen keyboard reachable for secure text fields.
+///
+/// Wraps a [TextField]; when it gains D-pad focus the IME show request is sent
+/// once more after focus settles (Fire TV drops the first one), and pressing
+/// OK while the field is focused re-requests it explicitly.
+class TvTextInput extends StatefulWidget {
+  const TvTextInput({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<TvTextInput> createState() => _TvTextInputState();
+}
+
+class _TvTextInputState extends State<TvTextInput> {
+  Timer? _retry;
+  bool _focused = false;
+
+  static final Set<LogicalKeyboardKey> _okKeys = {
+    LogicalKeyboardKey.select,
+    LogicalKeyboardKey.enter,
+    LogicalKeyboardKey.numpadEnter,
+    LogicalKeyboardKey.gameButtonA,
+  };
+
+  void _showKeyboard() {
+    SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && _okKeys.contains(event.logicalKey)) {
+      _showKeyboard();
+    }
+    // Never consume the key: the field itself still handles activation and
+    // text editing shortcuts.
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isTv(context)) return widget.child;
+
+    return Focus(
+      canRequestFocus: false,
+      onFocusChange: (focused) {
+        _focused = focused;
+        _retry?.cancel();
+        if (!focused) return;
+        _retry = Timer(const Duration(milliseconds: 300), () {
+          if (mounted && _focused) _showKeyboard();
+        });
+      },
+      onKeyEvent: _onKey,
+      child: widget.child,
+    );
+  }
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    super.dispose();
   }
 }

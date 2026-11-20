@@ -114,10 +114,12 @@ touch it.
   live progress instead of the timeline grid, a full-width search box, three-up
   poster grids, tighter page padding and a five-tab bar (Guide / Movies / Series
   / Search / More) with Recents, Favourites and Settings behind **More**. The
-  player opens immersive and drops the desktop volume slider. Desktop keeps the
-  sidebar; on TV it collapses to an icon rail while you're in a page and reopens
-  when focus returns, and the whole UI is scaled to 90% to fit more on screen.
-  TV and desktop keep the 12-hour timeline.
+  player opens immersive and drops the desktop volume slider. On TV, password
+  and PIN fields use a visible-password keyboard and re-request the IME after
+  focus, because Fire TV ignores the first request for secure editors. Desktop
+  keeps the sidebar; on TV it collapses to an icon rail while you're in a page
+  and reopens when focus returns, and the whole UI is scaled to 90% to fit more
+  on screen. TV and desktop keep the 12-hour timeline.
 - **Movies / Series** — responsive poster grids, category chips, local search, and
   detail pages with full-bleed artwork, an artwork-tinted ambient glow and a
   strong scrim for readability. Series have a season selector and play a whole
@@ -128,8 +130,10 @@ touch it.
 - **Player** — MediaKit/libmpv (TS, HLS, HEVC, AC3), auto-hiding controls,
   Netflix-style seeking: ±10 s buttons, tap the left/right third, `←/→` or `J/L`,
   a pop-up ±10 indicator, elapsed + remaining time, drag-to-scrub, and
-  auto-advance to the next episode. A **CC menu** lists embedded subtitle tracks
-  and follows mpv's auto-selection; `C` toggles captions.
+  auto-advance to the next episode. On TV, `OK` opens the controls and the D-pad
+  moves between them; the seek bar seeks in 10 s steps. A **CC menu** lists
+  embedded subtitle tracks and follows mpv's auto-selection; `C` toggles
+  captions.
 - **Recents** — last five channels, films and series played, with relative
   timestamps. Right-click / long-press (hold OK on TV) an entry to remove just
   that one; **Clear** wipes the list.
@@ -296,8 +300,8 @@ agents. `tool/check.ps1` runs formatting, the analyzer and the test suite.
 ```powershell
 .\tool\build_windows.ps1   # release build (keeps the icon font intact)
 flutter analyze            # clean
-flutter test               # 102 tests: parsing, XMLTV, portals, favourites, recents,
-                           # themes, updates, progress, resume UI, shell, focus
+flutter test               # 105 tests: parsing, XMLTV, portals, favourites, recents,
+                           # themes, updates, progress, resume UI, shell, focus, TV input
 dart run tool\smoke_api.dart   # client against a throwaway local HTTP panel
 ```
 

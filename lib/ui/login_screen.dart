@@ -271,24 +271,27 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            TextField(
-              controller: _password,
-              obscureText: _obscure,
-              autocorrect: false,
-              enableSuggestions: false,
-              autofillHints: const [AutofillHints.password],
-              onSubmitted: (_) => _submit(),
-              decoration: fieldDecoration(
-                label: 'Password',
-                prefixIcon: const Icon(Icons.lock_outline_rounded, size: 19),
-                suffixIcon: IconButton(
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                  icon: Icon(
-                    _obscure
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    size: 19,
-                    color: AppColors.textMuted,
+            TvTextInput(
+              child: TextField(
+                controller: _password,
+                obscureText: _obscure,
+                autocorrect: false,
+                enableSuggestions: false,
+                keyboardType: tvSecureKeyboardType(context),
+                autofillHints: const [AutofillHints.password],
+                onSubmitted: (_) => _submit(),
+                decoration: fieldDecoration(
+                  label: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded, size: 19),
+                  suffixIcon: IconButton(
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 19,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ),
               ),
