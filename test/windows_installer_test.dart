@@ -7,10 +7,13 @@ import 'package:rogue/updates/update_installer.dart';
 import 'package:rogue/updates/update_manifest.dart';
 
 UpdateManifest _manifest(String version) => UpdateManifest(
-      version: AppVersion.parse(version),
-      notes: '',
-      windows: const ReleaseArtifact(url: 'https://example.test/win.zip', sha256: 'x'),
-    );
+  version: AppVersion.parse(version),
+  notes: '',
+  windows: const ReleaseArtifact(
+    url: 'https://example.test/win.zip',
+    sha256: 'x',
+  ),
+);
 
 void main() {
   // Junctions and cmd.exe only exist on Windows; elsewhere the app never uses
@@ -80,12 +83,18 @@ void main() {
 
     expect(outcome, InstallOutcome.staged);
     expect(File('${root.path}\\app-1.1.0\\rogue.exe').existsSync(), isTrue);
-    expect(File('${root.path}\\app-1.1.0\\flutter_windows.dll').existsSync(), isTrue);
+    expect(
+      File('${root.path}\\app-1.1.0\\flutter_windows.dll').existsSync(),
+      isTrue,
+    );
 
     // `current` is a junction to the new build.
     final current = Directory('${root.path}\\current');
     expect(current.existsSync(), isTrue);
-    expect(File('${current.path}\\rogue.exe').readAsStringSync(), 'new build 1.1.0');
+    expect(
+      File('${current.path}\\rogue.exe').readAsStringSync(),
+      'new build 1.1.0',
+    );
 
     // The previous release is pruned, the running one is left alone.
     expect(old.existsSync(), isFalse);
@@ -99,7 +108,10 @@ void main() {
     );
 
     await expectLater(
-      installer.stage(artifact: zipBuild('1.1.0', includeExe: false), manifest: _manifest('1.1.0')),
+      installer.stage(
+        artifact: zipBuild('1.1.0', includeExe: false),
+        manifest: _manifest('1.1.0'),
+      ),
       throwsA(isA<StateError>()),
     );
     expect(Directory('${root.path}\\app-1.1.0').existsSync(), isFalse);
@@ -107,7 +119,8 @@ void main() {
 
   test('cannot self-install when the layout is not managed', () async {
     final plain = Directory('${root.path}\\plain')..createSync(recursive: true);
-    final exe = File('${plain.path}\\rogue.exe')..writeAsStringSync('dev build');
+    final exe = File('${plain.path}\\rogue.exe')
+      ..writeAsStringSync('dev build');
     final installer = WindowsUpdateInstaller(executableOverride: exe);
 
     expect(installer.canSelfInstall, isFalse);

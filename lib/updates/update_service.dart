@@ -10,15 +10,16 @@ import 'update_manifest.dart';
 /// the controller can be tested without touching the network.
 class UpdateService {
   UpdateService({Dio? dio, String? manifestUrl})
-      : _dio = dio ??
-            Dio(
-              BaseOptions(
-                connectTimeout: const Duration(seconds: 8),
-                receiveTimeout: const Duration(minutes: 2),
-                headers: {'Accept': 'application/json'},
-              ),
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 8),
+              receiveTimeout: const Duration(minutes: 2),
+              headers: {'Accept': 'application/json'},
             ),
-        manifestUrl = manifestUrl ?? defaultManifestUrl;
+          ),
+      manifestUrl = manifestUrl ?? defaultManifestUrl;
 
   final Dio _dio;
   final String manifestUrl;
@@ -34,7 +35,9 @@ class UpdateService {
 
   Future<UpdateManifest> fetch() async {
     if (!isConfigured) {
-      throw const UpdateException('This build has no update channel configured.');
+      throw const UpdateException(
+        'This build has no update channel configured.',
+      );
     }
     // Release assets are served as octet-stream, so ask for text and decode it
     // ourselves rather than relying on the content type.
@@ -43,9 +46,13 @@ class UpdateService {
       options: Options(responseType: ResponseType.plain),
     );
     final body = response.data;
-    final manifest = body is String ? UpdateManifest.tryDecode(body) : UpdateManifest.tryParse(body);
+    final manifest = body is String
+        ? UpdateManifest.tryDecode(body)
+        : UpdateManifest.tryParse(body);
     if (manifest == null) {
-      throw const UpdateException('The update manifest could not be understood.');
+      throw const UpdateException(
+        'The update manifest could not be understood.',
+      );
     }
     return manifest;
   }

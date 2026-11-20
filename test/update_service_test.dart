@@ -50,32 +50,37 @@ void main() {
     tempDir.deleteSync(recursive: true);
   });
 
-  test('reads an octet-stream manifest and downloads a verified artifact', () async {
-    final service = UpdateService(
-      manifestUrl: 'http://127.0.0.1:${server.port}/manifest.json',
-    );
+  test(
+    'reads an octet-stream manifest and downloads a verified artifact',
+    () async {
+      final service = UpdateService(
+        manifestUrl: 'http://127.0.0.1:${server.port}/manifest.json',
+      );
 
-    final manifest = await service.fetch();
-    expect(manifest.version.toString(), '2.0.0+20');
-    expect(manifest.notes, 'From a release asset');
+      final manifest = await service.fetch();
+      expect(manifest.version.toString(), '2.0.0+20');
+      expect(manifest.notes, 'From a release asset');
 
-    final artifact = manifest.windows!;
-    var lastReceived = 0;
-    final file = await service.download(
-      artifact,
-      fileName: 'build.bin',
-      into: tempDir,
-      onProgress: (received, total) => lastReceived = received,
-    );
+      final artifact = manifest.windows!;
+      var lastReceived = 0;
+      final file = await service.download(
+        artifact,
+        fileName: 'build.bin',
+        into: tempDir,
+        onProgress: (received, total) => lastReceived = received,
+      );
 
-    expect(file.existsSync(), isTrue);
-    expect(file.lengthSync(), artifactBytes.length);
-    expect(lastReceived, artifactBytes.length);
-    expect(await service.sha256Of(file), artifactHash);
-  });
+      expect(file.existsSync(), isTrue);
+      expect(file.lengthSync(), artifactBytes.length);
+      expect(lastReceived, artifactBytes.length);
+      expect(await service.sha256Of(file), artifactHash);
+    },
+  );
 
   test('reports a body that is not a manifest', () async {
-    final service = UpdateService(manifestUrl: 'http://127.0.0.1:${server.port}/missing.json');
+    final service = UpdateService(
+      manifestUrl: 'http://127.0.0.1:${server.port}/missing.json',
+    );
     await expectLater(service.fetch(), throwsA(isA<Exception>()));
   });
 }

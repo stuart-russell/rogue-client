@@ -72,9 +72,8 @@ void main() {
                             FocusableTap(
                               focusNode: cards[i],
                               onTap: () => taps[i]++,
-                              builder: (context, focused) => Text(
-                                'card$i ${focused ? 'FOCUSED' : ''}',
-                              ),
+                              builder: (context, focused) =>
+                                  Text('card$i ${focused ? 'FOCUSED' : ''}'),
                             ),
                         ],
                       ),

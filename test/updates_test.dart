@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeService extends UpdateService {
   _FakeService({this.manifest, this.hash, this.failFetch = false})
-      : super(manifestUrl: 'https://example.test/manifest.json');
+    : super(manifestUrl: 'https://example.test/manifest.json');
 
   final UpdateManifest? manifest;
   final String? hash;
@@ -62,11 +62,18 @@ class _FakeInstaller extends UpdateInstaller {
   }
 }
 
-UpdateManifest _manifest(String version, {String windowsHash = 'abc123'}) => UpdateManifest(
+UpdateManifest _manifest(String version, {String windowsHash = 'abc123'}) =>
+    UpdateManifest(
       version: AppVersion.parse(version),
       notes: 'Fixes and things.',
-      windows: ReleaseArtifact(url: 'https://example.test/win.zip', sha256: windowsHash),
-      android: ReleaseArtifact(url: 'https://example.test/app.apk', sha256: windowsHash),
+      windows: ReleaseArtifact(
+        url: 'https://example.test/win.zip',
+        sha256: windowsHash,
+      ),
+      android: ReleaseArtifact(
+        url: 'https://example.test/app.apk',
+        sha256: windowsHash,
+      ),
     );
 
 void main() {
@@ -85,7 +92,10 @@ void main() {
     test('orders by release, then build number', () {
       expect(AppVersion.parse('1.2.3') > AppVersion.parse('1.2.2'), isTrue);
       expect(AppVersion.parse('1.2.3+4') > AppVersion.parse('1.2.3+3'), isTrue);
-      expect(AppVersion.parse('1.2.3+3').sameReleaseAs(AppVersion.parse('1.2.3+9')), isTrue);
+      expect(
+        AppVersion.parse('1.2.3+3').sameReleaseAs(AppVersion.parse('1.2.3+9')),
+        isTrue,
+      );
       expect(AppVersion.parse('1.3.0') > AppVersion.parse('1.2.9+9'), isTrue);
     });
   });
@@ -98,7 +108,11 @@ void main() {
         'minSupported': '1.1.0',
         'notes': '  Big fixes  ',
         'page': 'https://example.test/release',
-        'windows': {'url': 'https://example.test/win.zip', 'sha256': 'AA' * 32, 'size': 123},
+        'windows': {
+          'url': 'https://example.test/win.zip',
+          'sha256': 'AA' * 32,
+          'size': 123,
+        },
         'android': {'url': 'https://example.test/app.apk', 'sha256': 'BB' * 32},
       });
 
@@ -123,18 +137,21 @@ void main() {
       expect(UpdateManifest.tryDecode('{"notes":"no version"}'), isNull);
     });
 
-    test('skips malformed artifacts and refuses a manifest without a version', () {
-      final manifest = UpdateManifest.tryParse({
-        'version': '2.0.0',
-        'windows': {'url': 'https://example.test/win.zip'},
-      });
-      expect(manifest, isNotNull);
-      expect(manifest!.windows, isNull);
-      expect(manifest.android, isNull);
+    test(
+      'skips malformed artifacts and refuses a manifest without a version',
+      () {
+        final manifest = UpdateManifest.tryParse({
+          'version': '2.0.0',
+          'windows': {'url': 'https://example.test/win.zip'},
+        });
+        expect(manifest, isNotNull);
+        expect(manifest!.windows, isNull);
+        expect(manifest.android, isNull);
 
-      expect(UpdateManifest.tryParse({'notes': 'no version'}), isNull);
-      expect(UpdateManifest.tryParse('nope'), isNull);
-    });
+        expect(UpdateManifest.tryParse({'notes': 'no version'}), isNull);
+        expect(UpdateManifest.tryParse('nope'), isNull);
+      },
+    );
 
     test('knows when an update is available or required', () {
       final manifest = _manifest('1.2.0');

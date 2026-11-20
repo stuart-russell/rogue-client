@@ -29,23 +29,35 @@ class UpdatesPanel extends StatelessWidget {
                     children: [
                       Text(
                         'Rogue ${updates.version.semver}',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         _status(updates),
-                        style: TextStyle(fontSize: 11.5, color: AppColors.textMuted, height: 1.4),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textMuted,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
-                  onPressed: updates.busy || !updates.isConfigured ? null : () => updates.check(),
+                  onPressed: updates.busy || !updates.isConfigured
+                      ? null
+                      : () => updates.check(),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.text,
                     side: BorderSide(color: AppColors.border),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                   ),
                   icon: updates.busy
                       ? SizedBox(
@@ -61,7 +73,8 @@ class UpdatesPanel extends StatelessWidget {
                 ),
               ],
             ),
-            if (manifest != null && (updates.hasUpdate || updates.phase == UpdatePhase.error))
+            if (manifest != null &&
+                (updates.hasUpdate || updates.phase == UpdatePhase.error))
               Padding(
                 padding: const EdgeInsets.only(top: 14),
                 child: _ReleaseCard(updates: updates, manifest: manifest),
@@ -75,7 +88,10 @@ class UpdatesPanel extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 13,
+                    ),
                   ),
                   icon: const Icon(Icons.restart_alt_rounded, size: 17),
                   label: const Text('Restart now'),
@@ -88,7 +104,10 @@ class UpdatesPanel extends StatelessWidget {
                 child: Text(
                   'Builds from CI point ROGUE_UPDATE_MANIFEST at the release manifest; '
                   'local builds leave it unset.',
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted.withValues(alpha: 0.8)),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
           ],
@@ -103,16 +122,19 @@ class UpdatesPanel extends StatelessWidget {
       UpdatePhase.notConfigured => 'Updates are disabled in this build.',
       UpdatePhase.idle => 'Not checked yet.',
       UpdatePhase.checking => 'Checking for updates…',
-      UpdatePhase.upToDate => checked == null
-          ? 'You are up to date.'
-          : 'You are up to date · checked ${_ago(checked)}',
-      UpdatePhase.available => 'Version ${updates.manifest?.version} is available.',
+      UpdatePhase.upToDate =>
+        checked == null
+            ? 'You are up to date.'
+            : 'You are up to date · checked ${_ago(checked)}',
+      UpdatePhase.available =>
+        'Version ${updates.manifest?.version} is available.',
       UpdatePhase.skipped => 'Version ${updates.manifest?.version} skipped.',
       UpdatePhase.downloading =>
         'Downloading… ${((updates.progress ?? 0) * 100).round()}%',
       UpdatePhase.staged => 'Update installed — restart to finish.',
       UpdatePhase.handedOff => 'Finish installing in the Android dialog.',
-      UpdatePhase.manual => 'Downloaded — the update file is in the window that opened.',
+      UpdatePhase.manual =>
+        'Downloaded — the update file is in the window that opened.',
       UpdatePhase.error => updates.error ?? 'Update failed.',
     };
   }
@@ -149,12 +171,20 @@ class _ReleaseCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.arrow_circle_down_rounded, size: 16, color: AppColors.accent),
+              Icon(
+                Icons.arrow_circle_down_rounded,
+                size: 16,
+                color: AppColors.accent,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Version ${manifest.version} of Rogue',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.accent),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.accent,
+                  ),
                 ),
               ),
               if (updates.hasUpdate && updates.phase != UpdatePhase.staged)
@@ -176,7 +206,11 @@ class _ReleaseCard extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Text(
                     notes,
-                    style: TextStyle(fontSize: 11.5, color: AppColors.textMuted, height: 1.5),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: AppColors.textMuted,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -205,10 +239,15 @@ class _ReleaseCard extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 13,
+                  ),
                 ),
                 icon: Icon(
-                  updates.canSelfInstall ? Icons.download_rounded : Icons.open_in_new_rounded,
+                  updates.canSelfInstall
+                      ? Icons.download_rounded
+                      : Icons.open_in_new_rounded,
                   size: 17,
                 ),
                 label: Text(updates.actionLabel),
@@ -220,7 +259,11 @@ class _ReleaseCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 updates.error!,
-                style: TextStyle(fontSize: 11.5, color: AppColors.warning, height: 1.45),
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: AppColors.warning,
+                  height: 1.45,
+                ),
               ),
             ),
         ],

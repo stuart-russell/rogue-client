@@ -32,7 +32,9 @@ class AppVersion implements Comparable<AppVersion> {
       return int.tryParse(digits ?? '') ?? 0;
     }
 
-    final build = int.tryParse(RegExp(r'^\d+').firstMatch(buildText)?.group(0) ?? '') ?? 0;
+    final build =
+        int.tryParse(RegExp(r'^\d+').firstMatch(buildText)?.group(0) ?? '') ??
+        0;
     return AppVersion(at(0), at(1), at(2), build);
   }
 
@@ -55,7 +57,8 @@ class AppVersion implements Comparable<AppVersion> {
       major == other.major && minor == other.minor && patch == other.patch;
 
   @override
-  bool operator ==(Object other) => other is AppVersion && compareTo(other) == 0;
+  bool operator ==(Object other) =>
+      other is AppVersion && compareTo(other) == 0;
 
   @override
   int get hashCode => Object.hash(major, minor, patch, build);

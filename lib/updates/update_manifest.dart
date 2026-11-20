@@ -57,9 +57,9 @@ class UpdateManifest {
   final ReleaseArtifact? android;
 
   ReleaseArtifact? artifactFor(UpdateTarget target) => switch (target) {
-        UpdateTarget.windows => windows,
-        UpdateTarget.android => android,
-      };
+    UpdateTarget.windows => windows,
+    UpdateTarget.android => android,
+  };
 
   bool isNewerThan(AppVersion other) => version > other;
 
@@ -82,10 +82,14 @@ class UpdateManifest {
   static UpdateManifest? tryParse(Object? raw) {
     if (raw is! Map) return null;
     final version = AppVersion.parse(raw['version']?.toString() ?? '');
-    if (version.major == 0 && version.minor == 0 && version.patch == 0) return null;
+    if (version.major == 0 && version.minor == 0 && version.patch == 0) {
+      return null;
+    }
 
     final build = raw['build'];
-    final buildNumber = build is num ? build.toInt() : int.tryParse(build?.toString() ?? '');
+    final buildNumber = build is num
+        ? build.toInt()
+        : int.tryParse(build?.toString() ?? '');
     final resolved = buildNumber == null
         ? version
         : AppVersion(version.major, version.minor, version.patch, buildNumber);
@@ -95,7 +99,9 @@ class UpdateManifest {
     return UpdateManifest(
       version: resolved,
       notes: raw['notes']?.toString().trim() ?? '',
-      minSupported: floor == null || floor.isEmpty ? null : AppVersion.parse(floor),
+      minSupported: floor == null || floor.isEmpty
+          ? null
+          : AppVersion.parse(floor),
       pageUrl: (raw['page'] ?? raw['pageUrl'])?.toString().trim(),
       windows: ReleaseArtifact.tryParse(raw['windows']),
       android: ReleaseArtifact.tryParse(raw['android']),

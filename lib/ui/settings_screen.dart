@@ -66,7 +66,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _section('Appearance', [
                     Text(
                       'Applies instantly and is remembered on this device.',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     LayoutBuilder(
@@ -657,7 +660,9 @@ class _PaletteCardState extends State<_PaletteCard> {
             border: Border.all(
               color: selected
                   ? palette.accent
-                  : (_hovered ? palette.border.withValues(alpha: 1) : palette.border.withValues(alpha: 0.7)),
+                  : (_hovered
+                        ? palette.border.withValues(alpha: 1)
+                        : palette.border.withValues(alpha: 0.7)),
               width: selected ? 1.6 : 1,
             ),
           ),
@@ -674,7 +679,11 @@ class _PaletteCardState extends State<_PaletteCard> {
                   _swatch(palette.accent, 20, circle: true),
                   const Spacer(),
                   if (selected)
-                    Icon(Icons.check_circle_rounded, size: 16, color: palette.accent),
+                    Icon(
+                      Icons.check_circle_rounded,
+                      size: 16,
+                      color: palette.accent,
+                    ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -700,7 +709,12 @@ class _PaletteCardState extends State<_PaletteCard> {
     );
   }
 
-  Widget _swatch(Color colour, double size, {double radius = 0, bool circle = false}) {
+  Widget _swatch(
+    Color colour,
+    double size, {
+    double radius = 0,
+    bool circle = false,
+  }) {
     return Container(
       width: size,
       height: size,

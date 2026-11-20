@@ -60,7 +60,9 @@ Future<AppModel> _pump(WidgetTester tester, Widget home) async {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('a film has one favourite control, in the top banner', (tester) async {
+  testWidgets('a film has one favourite control, in the top banner', (
+    tester,
+  ) async {
     final model = await _pump(
       tester,
       const MovieDetailScreen(
@@ -85,7 +87,9 @@ void main() {
     expect(model.favourites.contains(FavouriteType.vod, 42), isFalse);
   });
 
-  testWidgets('a series has one favourite control, in the top banner', (tester) async {
+  testWidgets('a series has one favourite control, in the top banner', (
+    tester,
+  ) async {
     final model = await _pump(
       tester,
       const SeriesDetailScreen(

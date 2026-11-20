@@ -40,10 +40,10 @@ class UpdateController extends ChangeNotifier {
     UpdateInstaller? installer,
     AppVersion? currentVersion,
     UpdateTarget? target,
-  })  : _service = service ?? UpdateService(),
-        _installer = installer ?? installerForCurrentPlatform(),
-        _target = target ?? currentUpdateTarget,
-        currentVersion = currentVersion ?? AppVersion.running;
+  }) : _service = service ?? UpdateService(),
+       _installer = installer ?? installerForCurrentPlatform(),
+       _target = target ?? currentUpdateTarget,
+       currentVersion = currentVersion ?? AppVersion.running;
 
   static const Duration _staleAfter = Duration(hours: 6);
   static const _kLastCheck = 'update.lastCheck';
@@ -164,7 +164,8 @@ class UpdateController extends ChangeNotifier {
 
     File? artifactFile;
     try {
-      final name = 'rogue-${manifest.version}${target == UpdateTarget.windows ? '.zip' : '.apk'}';
+      final name =
+          'rogue-${manifest.version}${target == UpdateTarget.windows ? '.zip' : '.apk'}';
       artifactFile = await _service.download(
         artifact,
         fileName: name,
@@ -183,7 +184,10 @@ class UpdateController extends ChangeNotifier {
         );
       }
 
-      final outcome = await _installer.stage(artifact: artifactFile, manifest: manifest);
+      final outcome = await _installer.stage(
+        artifact: artifactFile,
+        manifest: manifest,
+      );
       _phase = switch (outcome) {
         InstallOutcome.staged => UpdatePhase.staged,
         InstallOutcome.handedOff => UpdatePhase.handedOff,

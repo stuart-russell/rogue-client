@@ -58,7 +58,8 @@ class WindowsUpdateInstaller extends UpdateInstaller {
 
   final File? executableOverride;
 
-  File get executable => executableOverride ?? File(Platform.resolvedExecutable);
+  File get executable =>
+      executableOverride ?? File(Platform.resolvedExecutable);
 
   /// `...\Programs\Rogue\app-1.2.0\rogue.exe` → `...\Programs\Rogue`.
   Directory? get _installRoot {
@@ -115,9 +116,17 @@ class WindowsUpdateInstaller extends UpdateInstaller {
       // `rmdir` removes the junction itself, never the folder it points at.
       await Process.run('cmd', ['/c', 'rmdir', link.path]);
     }
-    final result = await Process.run('cmd', ['/c', 'mklink', '/J', link.path, target.path]);
+    final result = await Process.run('cmd', [
+      '/c',
+      'mklink',
+      '/J',
+      link.path,
+      target.path,
+    ]);
     if (result.exitCode != 0) {
-      throw StateError('Could not switch the install to ${target.path}: ${result.stderr}');
+      throw StateError(
+        'Could not switch the install to ${target.path}: ${result.stderr}',
+      );
     }
   }
 
@@ -164,7 +173,9 @@ class WindowsUpdateInstaller extends UpdateInstaller {
 
 /// Hands the downloaded APK to the system package installer.
 class AndroidUpdateInstaller extends UpdateInstaller {
-  static const MethodChannel _channel = MethodChannel('app.rogue.client/updater');
+  static const MethodChannel _channel = MethodChannel(
+    'app.rogue.client/updater',
+  );
 
   @override
   bool get canSelfInstall => true;
