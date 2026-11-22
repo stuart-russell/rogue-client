@@ -114,6 +114,14 @@ class EpgController extends ChangeNotifier {
 
   bool get hasData => _byChannel.isNotEmpty;
 
+  /// XMLTV is refreshed by the guide when it is older than this.
+  static const Duration staleAfter = Duration(hours: 3);
+
+  bool get isStale {
+    final when = updatedAt;
+    return when == null || DateTime.now().difference(when) > staleAfter;
+  }
+
   void bind(XtreamApi api) {
     final scope = '${api.origin}|${api.username}';
     if (_scope == scope) return;

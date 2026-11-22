@@ -51,7 +51,10 @@ Responsive helpers live in `lib/ui/responsive.dart` (`isCompact`, `isTv`,
 Android at width >= 900; detail pages use it to shorten vertical chrome, and the
 TV shell collapses the sidebar to a 64 px icon rail while focus is in the page.
 `TvScale` wraps all TV routes and renders a 0.9x UI, so text, cards and padding
-shrink together (desktop and phones are unscaled). `FocusRing` wraps Settings
+shrink together (desktop and phones are unscaled). On TV, Back is handled by
+`HomeShell`: the guide moves focus from the channel grid to the category rail,
+then to the sidebar, and only then offers an exit confirmation. Pushed routes
+(player, detail, dialogs) handle their own Back first. `FocusRing` wraps Settings
 rows/controls and draws a 2 px accent border plus a light tint around whichever
 descendant has focus.
 
@@ -79,6 +82,14 @@ lifetime; the player route binds to it. `PreviewPlayer` is a second, muted
 player used by the guide banner and halted whenever the full player opens or the
 tab changes (one-connection panels). The Windows embedder needs Impeller
 disabled for external textures.
+
+On Android the Flutter engine is cached by `RogueApplication` and the activity
+does not destroy it with the host. This is required for the app-lifetime
+players: destroying the engine destroys the Dart isolate while libmpv threads
+still hold media_kit's wake-up callback, which later crashes in freed Dart
+memory. Since the isolate survives leaving the app, `AppLifecycleState` pauses
+the guide's clock/preview and playback, and a stale XMLTV guide is refreshed on
+return.
 
 ## Updates
 

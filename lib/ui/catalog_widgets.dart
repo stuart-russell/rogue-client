@@ -60,11 +60,16 @@ class CategoryRail extends StatelessWidget {
     required this.items,
     required this.selected,
     required this.onSelected,
+    this.selectedFocusNode,
   });
 
   final List<CategoryItem> items;
   final int? selected;
   final ValueChanged<int?> onSelected;
+
+  /// Focus target for the currently selected row, used by TV Back to return
+  /// from the channel grid to the categories.
+  final FocusNode? selectedFocusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +88,7 @@ class CategoryRail extends StatelessWidget {
             return _CategoryRow(
               item: item,
               active: active,
+              focusNode: active ? selectedFocusNode : null,
               onTap: () => onSelected(item.id),
             );
           },
@@ -109,11 +115,13 @@ class _CategoryRow extends StatefulWidget {
     required this.item,
     required this.active,
     required this.onTap,
+    this.focusNode,
   });
 
   final CategoryItem item;
   final bool active;
   final VoidCallback onTap;
+  final FocusNode? focusNode;
 
   @override
   State<_CategoryRow> createState() => _CategoryRowState();
@@ -126,6 +134,7 @@ class _CategoryRowState extends State<_CategoryRow> {
   Widget build(BuildContext context) {
     final active = widget.active;
     return FocusableTap(
+      focusNode: widget.focusNode,
       onTap: widget.onTap,
       builder: (context, focused) => MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),

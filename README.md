@@ -119,7 +119,10 @@ touch it.
   focus, because Fire TV ignores the first request for secure editors. Desktop
   keeps the sidebar; on TV it collapses to an icon rail while you're in a page
   and reopens when focus returns, and the whole UI is scaled to 90% to fit more
-  on screen. TV and desktop keep the 12-hour timeline.
+  on screen. Closing and reopening Rogue keeps its place, and the guide
+  refreshes itself when you return. On TV, Back steps out of the guide
+  (channels → categories → sidebar) and asks before exiting the app. TV and
+  desktop keep the 12-hour timeline.
 - **Movies / Series** — responsive poster grids, category chips, local search, and
   detail pages with full-bleed artwork, an artwork-tinted ambient glow and a
   strong scrim for readability. Series have a season selector and play a whole
@@ -300,7 +303,7 @@ agents. `tool/check.ps1` runs formatting, the analyzer and the test suite.
 ```powershell
 .\tool\build_windows.ps1   # release build (keeps the icon font intact)
 flutter analyze            # clean
-flutter test               # 105 tests: parsing, XMLTV, portals, favourites, recents,
+flutter test               # 107 tests: parsing, XMLTV, portals, favourites, recents,
                            # themes, updates, progress, resume UI, shell, focus, TV input
 dart run tool\smoke_api.dart   # client against a throwaway local HTTP panel
 ```

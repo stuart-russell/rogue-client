@@ -47,6 +47,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _controlsVisible = true;
   bool _fullscreen = false;
   bool _disposed = false;
+  bool _pausedByLifecycle = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   double _volume = 100;
@@ -401,7 +402,18 @@ class _PlayerScreenState extends State<PlayerScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
+      _pausedByLifecycle = _playing;
       _player.pause();
+      _recordProgress(force: true);
+    } else if (state == AppLifecycleState.resumed && _pausedByLifecycle) {
+      _pausedByLifecycle = false;
+      if (_isLive) {
+        // A paused live connection often dies while the app is in the
+        // background; rejoin at the live edge instead of showing an error.
+        _open();
+      } else {
+        _player.play();
+      }
     }
   }
 

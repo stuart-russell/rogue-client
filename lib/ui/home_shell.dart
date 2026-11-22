@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../state/app_model.dart';
 import '../theme.dart';
+import 'focus_ring.dart';
 import 'focusable_tap.dart';
 import 'live_guide_screen.dart';
 import 'favourites_screen.dart';
@@ -60,9 +61,12 @@ class _HomeShellState extends State<HomeShell> {
 
   final GlobalKey _sidebarKey = GlobalKey();
   final GlobalKey _contentKey = GlobalKey();
+  final GlobalKey<LiveGuideScreenState> _guideKey = GlobalKey();
+  final FocusNode _sidebarFocus = FocusNode(debugLabel: 'sidebar-selected');
   late int _index = _initialIndex();
   bool _bootstrapped = false;
   bool _sidebarFocused = true;
+  bool _exitDialogOpen = false;
   late final Set<int> _visited = {_index};
 
   @override
@@ -74,6 +78,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void dispose() {
     FocusManager.instance.removeListener(_handleFocusChange);
+    _sidebarFocus.dispose();
     super.dispose();
   }
 
@@ -109,7 +114,7 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   List<Widget> _buildPages() => [
-    LiveGuideScreen(active: _index == 0),
+    LiveGuideScreen(key: _guideKey, active: _index == 0),
     const MoviesScreen(),
     const SeriesScreen(),
     const SearchScreen(),
@@ -128,8 +133,8 @@ class _HomeShellState extends State<HomeShell> {
       final model = AppScope.read(context);
       await model.catalog.loadAll();
       if (!mounted) return;
-      if (!model.epg.hasData) {
-        model.epg.load();
+      if (!model.epg.hasData || model.epg.isStale) {
+        model.epg.load(force: model.epg.isStale);
       }
     });
   }
@@ -142,11 +147,94 @@ class _HomeShellState extends State<HomeShell> {
     });
   }
 
+  /// TV Back walks out of the page instead of closing the app:
+  /// grid -> category rail (guide) -> sidebar -> exit confirmation.
+  Future<void> _handleBack() async {
+    if (!isTv(context) || _exitDialogOpen) return;
+    final focus = FocusManager.instance.primaryFocus?.context;
+    final inSidebar = focus != null && _isWithin(_sidebarKey, focus);
+    final inContent = focus != null && _isWithin(_contentKey, focus);
+
+    if (inSidebar) {
+      await _confirmExit();
+      return;
+    }
+    if (inContent) {
+      if (_index == 0) {
+        final guide = _guideKey.currentState;
+        if (guide != null && guide.handleBack()) return;
+      }
+      _sidebarFocus.requestFocus();
+      return;
+    }
+    // Focus is on a route scope or lost; put it back on the sidebar.
+    _sidebarFocus.requestFocus();
+  }
+
+  Future<void> _confirmExit() async {
+    if (_exitDialogOpen) return;
+    _exitDialogOpen = true;
+    bool? exit;
+    try {
+      exit = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.backgroundElevated,
+          title: const Text('Exit Rogue?'),
+          content: Text(
+            'Are you sure you want to exit the app?',
+            style: TextStyle(fontSize: 13.5, color: AppColors.textMuted),
+          ),
+          actions: [
+            FocusRing(
+              radius: 12,
+              child: TextButton(
+                autofocus: true,
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FocusRing(
+              radius: 12,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Exit'),
+              ),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      _exitDialogOpen = false;
+    }
+    if (!mounted || exit != true) return;
+    await SystemNavigator.pop();
+  }
+
+  Widget _wrapBack(Widget child) {
+    if (!isTv(context)) return child;
+    return CallbackShortcuts(
+      bindings: {
+        // Remotes send a system Back, but keyboards send Escape.
+        const SingleActivator(LogicalKeyboardKey.escape): _handleBack,
+      },
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) _handleBack();
+        },
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final model = AppScope.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final wide = width >= 900;
+    final tv = isTv(context);
     final pages = _buildPages();
 
     final content = CallbackShortcuts(
@@ -195,67 +283,71 @@ class _HomeShellState extends State<HomeShell> {
     );
 
     if (wide) {
-      final tv = isTv(context);
       final sidebarCollapsed = tv && !_sidebarFocused;
-      return Scaffold(
-        body: Row(
-          children: [
-            _Sidebar(
-              key: _sidebarKey,
-              index: _index,
-              onSelect: _select,
-              model: model,
-              collapsed: sidebarCollapsed,
-            ),
-            VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
-            Expanded(key: _contentKey, child: content),
-          ],
+      return _wrapBack(
+        Scaffold(
+          body: Row(
+            children: [
+              _Sidebar(
+                key: _sidebarKey,
+                index: _index,
+                onSelect: _select,
+                model: model,
+                collapsed: sidebarCollapsed,
+                selectedFocusNode: _sidebarFocus,
+              ),
+              VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
+              Expanded(key: _contentKey, child: content),
+            ],
+          ),
         ),
       );
     }
 
-    return Scaffold(
-      body: SafeArea(bottom: false, child: content),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index <= 3 ? _index : 4,
-        height: 62,
-        backgroundColor: AppColors.backgroundElevated,
-        indicatorColor: AppColors.accent.withValues(alpha: 0.18),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        onDestinationSelected: (index) {
-          if (index == 4) {
-            _showMore(context);
-          } else {
-            _select(index);
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.live_tv_outlined, size: 22),
-            selectedIcon: Icon(Icons.live_tv_rounded, size: 22),
-            label: 'Guide',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.movie_outlined, size: 22),
-            selectedIcon: Icon(Icons.movie_rounded, size: 22),
-            label: 'Movies',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.video_library_outlined, size: 22),
-            selectedIcon: Icon(Icons.video_library_rounded, size: 22),
-            label: 'Series',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.search_rounded, size: 22),
-            selectedIcon: Icon(Icons.search_rounded, size: 22),
-            label: 'Search',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.more_horiz_rounded, size: 22),
-            selectedIcon: Icon(Icons.more_horiz_rounded, size: 22),
-            label: 'More',
-          ),
-        ],
+    return _wrapBack(
+      Scaffold(
+        body: SafeArea(bottom: false, child: content),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _index <= 3 ? _index : 4,
+          height: 62,
+          backgroundColor: AppColors.backgroundElevated,
+          indicatorColor: AppColors.accent.withValues(alpha: 0.18),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          onDestinationSelected: (index) {
+            if (index == 4) {
+              _showMore(context);
+            } else {
+              _select(index);
+            }
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.live_tv_outlined, size: 22),
+              selectedIcon: Icon(Icons.live_tv_rounded, size: 22),
+              label: 'Guide',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.movie_outlined, size: 22),
+              selectedIcon: Icon(Icons.movie_rounded, size: 22),
+              label: 'Movies',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.video_library_outlined, size: 22),
+              selectedIcon: Icon(Icons.video_library_rounded, size: 22),
+              label: 'Series',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.search_rounded, size: 22),
+              selectedIcon: Icon(Icons.search_rounded, size: 22),
+              label: 'Search',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.more_horiz_rounded, size: 22),
+              selectedIcon: Icon(Icons.more_horiz_rounded, size: 22),
+              label: 'More',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -314,12 +406,14 @@ class _Sidebar extends StatelessWidget {
     required this.onSelect,
     required this.model,
     required this.collapsed,
+    required this.selectedFocusNode,
   });
 
   final int index;
   final ValueChanged<int> onSelect;
   final AppModel model;
   final bool collapsed;
+  final FocusNode selectedFocusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -376,6 +470,7 @@ class _Sidebar extends StatelessWidget {
                         destination: _destinations[i],
                         selected: index == i,
                         collapsed: compact,
+                        focusNode: index == i ? selectedFocusNode : null,
                         onTap: () => onSelect(i),
                       ),
                     ],
@@ -453,12 +548,14 @@ class _SidebarTile extends StatefulWidget {
     required this.selected,
     required this.collapsed,
     required this.onTap,
+    this.focusNode,
   });
 
   final _Destination destination;
   final bool selected;
   final bool collapsed;
   final VoidCallback onTap;
+  final FocusNode? focusNode;
 
   @override
   State<_SidebarTile> createState() => _SidebarTileState();
@@ -473,6 +570,7 @@ class _SidebarTileState extends State<_SidebarTile> {
     final hovered = _hovered;
 
     return FocusableTap(
+      focusNode: widget.focusNode,
       onTap: widget.onTap,
       // Put the initial D-pad focus on the selected tab.
       autofocus: selected,

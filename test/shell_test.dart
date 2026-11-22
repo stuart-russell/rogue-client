@@ -164,6 +164,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(model.preferences.paletteId, 'midnight');
   });
+
+  testWidgets('TV Back walks to the sidebar, then asks before exiting', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await _pumpShell(tester);
+
+    // TV Guide -> Settings.
+    for (var i = 0; i < 6; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(find.text('Account, playback and local cache'), findsOneWidget);
+
+    final sidebar = find.byKey(const ValueKey('sidebar'));
+
+    // Enter the page: the TV rail collapses.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(sidebar).width, 64);
+
+    // Back returns to the sidebar instead of leaving the app.
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(sidebar).width, 224);
+    expect(find.text('Exit Rogue?'), findsNothing);
+
+    // Back from the sidebar asks for confirmation.
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Exit Rogue?'), findsOneWidget);
+    expect(find.text('Are you sure you want to exit the app?'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Exit Rogue?'), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
+  });
 }
 
 Future<AppModel> _pumpShell(WidgetTester tester) async {

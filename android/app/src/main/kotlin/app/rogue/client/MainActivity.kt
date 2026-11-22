@@ -11,6 +11,10 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 class MainActivity : FlutterActivity() {
+    override fun getCachedEngineId(): String = RogueApplication.ENGINE_ID
+
+    override fun shouldDestroyEngineWithHost(): Boolean = false
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.rogue.client/updater")

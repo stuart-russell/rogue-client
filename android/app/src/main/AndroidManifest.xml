@@ -10,7 +10,7 @@
 
     <application
         android:label="Rogue"
-        android:name="${applicationName}"
+        android:name=".RogueApplication"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/tv_banner"
         android:usesCleartextTraffic="true">

@@ -33,7 +33,7 @@ agents. Read it before changing code; follow the links for depth.
 
 ```powershell
 flutter pub get
-tool/check.ps1                 # format check + analyze + test (105 tests)
+tool/check.ps1                 # format check + analyze + test (107 tests)
 flutter run -d windows         # debug on the desktop
 dart run tool/mock_panel.dart  # local fake panel at http://127.0.0.1:8099
 ```
@@ -129,6 +129,20 @@ Conventions you must follow:
   seek bar. Hidden controls are `ExcludeFocus`ed and focus returns to a dedicated
   video-surface node; otherwise the focus scope re-focuses a hidden button and
   OK silently toggles playback. The seek bar itself handles ±10 s.
+- **Android engine lifetime:** `RogueApplication` caches one Flutter engine and
+  `MainActivity` does not destroy it with the host. The app-lifetime media_kit
+  player must never outlive the Dart isolate: destroying the engine while libmpv
+  threads are alive leaves its wake-up callback pointing at freed Dart memory
+  (`SIGSEGV` in `libmpv.so` / `anon:dart-zone`). Because the isolate now survives
+  leaving Rogue, lifecycle handlers pause background work: the guide stops its
+  minute clock and preview and refreshes stale XMLTV on return; the player pauses
+  and reopens a live stream at the live edge.
+- **TV Back:** the shell owns Back (`PopScope` plus an Escape shortcut): guide
+  grid → category rail → sidebar → exit confirmation. The first Back must never
+  close the app; full-screen surfaces (player, detail, dialogs) are pushed
+  routes so their own Back handling runs first. `LiveGuideScreen.handleBack()`
+  focuses the selected `CategoryRail` row; the shell then focuses the selected
+  sidebar tile. Keep new page-local Back levels behind that ordering.
 - **Fire TV keyboard:** `TvTextInput` (`lib/ui/widgets.dart`) retries
   `TextInput.show` after focus and on OK; TV password/PIN fields request
   `TextInputType.visiblePassword` because Fire TV ignores the first request for

@@ -30,10 +30,11 @@ class LiveGuideScreen extends StatefulWidget {
   final bool active;
 
   @override
-  State<LiveGuideScreen> createState() => _LiveGuideScreenState();
+  State<LiveGuideScreen> createState() => LiveGuideScreenState();
 }
 
-class _LiveGuideScreenState extends State<LiveGuideScreen> {
+class LiveGuideScreenState extends State<LiveGuideScreen>
+    with WidgetsBindingObserver {
   static const double _rowHeight = 62;
   static const double _channelWidth = 200;
   static const double _rulerHeight = 34;
@@ -44,12 +45,15 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
   final _gridScroll = ScrollController();
   final _channelScroll = ScrollController();
   final _preview = PreviewPlayer();
+  final _categoryKey = GlobalKey();
+  final _categoryFocus = FocusNode(debugLabel: 'guide-category');
 
   int? _categoryId;
   int? _selectedId;
   String _query = '';
   bool _syncing = false;
   bool _initialJumpDone = false;
+  bool _resumed = true;
   Timer? _clock;
 
   late final DateTime _windowStart;
@@ -68,12 +72,45 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
     );
     _windowEnd = _windowStart.add(const Duration(hours: 12));
 
-    _clock = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (mounted) setState(() {});
-    });
+    WidgetsBinding.instance.addObserver(this);
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _resumed = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+    _startClock();
 
     _gridScroll.addListener(() => _sync(_gridScroll, _channelScroll));
     _channelScroll.addListener(() => _sync(_channelScroll, _gridScroll));
+  }
+
+  void _startClock() {
+    _clock?.cancel();
+    _clock = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted || !_resumed) return;
+      setState(() {});
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final resumed = state == AppLifecycleState.resumed;
+    if (_resumed == resumed) return;
+    _resumed = resumed;
+    if (resumed) {
+      _startClock();
+      final model = AppScope.read(context);
+      if (model.epg.isStale && (ModalRoute.of(context)?.isCurrent ?? true)) {
+        // With the cached engine the app can stay alive for days; pick up a
+        // fresh guide instead of showing yesterday's programmes. Skip it while
+        // a player route owns the panel connection.
+        unawaited(model.epg.load(force: true));
+      }
+      if (widget.active) _resumePreview(force: true);
+      return;
+    }
+    // The Flutter engine now survives leaving the app, so stop the minute
+    // clock and the preview stream until the viewer comes back.
+    _clock?.cancel();
+    _clock = null;
+    _preview.halt();
   }
 
   @override
@@ -89,6 +126,8 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _categoryFocus.dispose();
     _clock?.cancel();
     _search.dispose();
     _horizontal.dispose();
@@ -148,7 +187,38 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
     );
   }
 
+  /// TV Back within the guide: grid/content -> category rail.
+  ///
+  /// Returns false when the category rail already has focus, so the shell can
+  /// continue to the sidebar and then the exit prompt.
+  bool handleBack() {
+    if (!isTv(context) || !_resumed) return false;
+    final focus = FocusManager.instance.primaryFocus?.context;
+    if (focus != null && _isWithin(_categoryKey, focus)) return false;
+    if (_categoryFocus.context == null) return false;
+    _categoryFocus.requestFocus();
+    return true;
+  }
+
+  bool _isWithin(GlobalKey key, BuildContext focus) {
+    final target = key.currentContext;
+    if (target == null) return false;
+    if (identical(focus, target)) return true;
+    var inside = false;
+    focus.visitAncestorElements((element) {
+      if (identical(element, target)) {
+        inside = true;
+        return false;
+      }
+      return true;
+    });
+    return inside;
+  }
+
   void _resumePreview({bool force = false}) {
+    if (!_resumed) return;
+    // A pushed player route owns the panel connection.
+    if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
     final model = AppScope.read(context);
     if (model.preferences.performanceMode) {
       _preview.release();
@@ -306,6 +376,7 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
           return;
         }
         if (!widget.active) return;
+        if (!_resumed) return;
         if (performance) {
           await _preview.release();
           return;
@@ -389,6 +460,8 @@ class _LiveGuideScreenState extends State<LiveGuideScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       CategoryRail(
+                        key: _categoryKey,
+                        selectedFocusNode: _categoryFocus,
                         items: categoriesToRail(
                           categories,
                           catalog.countFor(CatalogSegment.live, null),
